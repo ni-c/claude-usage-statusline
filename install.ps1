@@ -119,8 +119,13 @@ function Install-ClaudeUsageStatusline {
     if ($KeepOld -and $old -is [System.Management.Automation.PSCustomObject]) {
       foreach ($p in $old.PSObject.Properties) { $entry | Add-Member -NotePropertyName $p.Name -NotePropertyValue $p.Value }
     }
-    $entry | Add-Member -NotePropertyName type -NotePropertyValue 'command' -Force
-    $entry | Add-Member -NotePropertyName command -NotePropertyValue $Command -Force
+    # Existing values are set in place: Add-Member -Force would remove the property
+    # and append it again, so every reinstall would reorder the entry and rewrite
+    # a file that had nothing to change.
+    foreach ($pair in @(@('type', 'command'), @('command', $Command))) {
+      if ($null -ne $entry.PSObject.Properties[$pair[0]]) { $entry.($pair[0]) = $pair[1] }
+      else { $entry | Add-Member -NotePropertyName $pair[0] -NotePropertyValue $pair[1] }
+    }
     if ($null -eq $entry.PSObject.Properties['refreshInterval']) {
       $entry | Add-Member -NotePropertyName refreshInterval -NotePropertyValue 30
     }
