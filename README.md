@@ -168,7 +168,7 @@ PowerShell 7). Both are tested against the same list of cases in
 
 ```sh
 bats tests/                                   # statusline.sh and install.sh
-pwsh -c 'Invoke-Pester tests'                 # statusline.ps1 and install.ps1
+pwsh -File tests/Invoke-Tests.ps1             # statusline.ps1 and install.ps1
 shellcheck statusline.sh install.sh scripts/*.sh
 scripts/render-preview.sh                     # after changing the output format
 ```

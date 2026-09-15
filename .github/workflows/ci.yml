@@ -83,16 +83,12 @@ jobs:
       - name: Build release assets
         shell: bash
         run: scripts/stamp-release.sh 9.9.9 "$(cygpath -u "$RUNNER_TEMP")/dist"
+      # `shell:` cannot take the matrix, so cmd starts the PowerShell under test.
       - name: Pester on ${{ matrix.shell }}
-        shell: ${{ matrix.shell }}
+        shell: cmd
         env:
           CUS_DIST: ${{ runner.temp }}\dist
-        run: |
-          $PSVersionTable.PSVersion.ToString()
-          Install-Module Pester -RequiredVersion 5.9.1 -Force -Scope CurrentUser -SkipPublisherCheck
-          Import-Module Pester -RequiredVersion 5.9.1
-          $result = Invoke-Pester -Path tests -Output Detailed -PassThru
-          if ($result.FailedCount -gt 0 -or $result.Result -ne 'Passed') { exit 1 }
+        run: ${{ matrix.shell }} -NoProfile -ExecutionPolicy Bypass -File tests\Invoke-Tests.ps1
 
   # statusline.sh as Claude Code runs it on Windows when Git Bash is installed, with
   # the runner's native jq.exe (which writes CRLF).
