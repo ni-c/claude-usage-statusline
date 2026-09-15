@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-09-15
+
 ### Added
 
 - A status line for Claude Code showing the model, the folder, the git branch, how
@@ -28,5 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `statusLine` in `settings.json`, keeps every other setting and a copy of the
   previous file, refuses to replace another status line without `--force` / `-Force`,
   and removes itself with `--uninstall` / `-Uninstall`.
+- A build provenance attestation for every release asset, checkable with
+  `gh attestation verify <file> --repo ni-c/claude-usage-statusline`.
 
-[Unreleased]: https://github.com/ni-c/claude-usage-statusline/commits/main
+[Unreleased]: https://github.com/ni-c/claude-usage-statusline/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/ni-c/claude-usage-statusline/releases/tag/v1.0.0
