@@ -1,0 +1,4 @@
+# LF everywhere, on Windows checkouts too: bash cannot run a script with CRLF, and
+# cases.tsv and the fixtures are compared byte for byte.
+* text=auto eol=lf
+*.svg text eol=lf

@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq bats jq
+      - run: bats tests/
+      - run: scripts/render-preview.sh --check
+
+  github-release:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # The installers get this version and the checksums of the scripts baked in, so
+      # the one-liner in the README only ever installs the bytes of its own release.
+      - name: Build the release assets
+        run: |
+          scripts/stamp-release.sh "${GITHUB_REF_NAME#v}" dist
+          cat dist/SHA256SUMS
+      - name: Extract release notes from CHANGELOG
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v ver="$version" \
+            '$0 ~ "^## \\[" ver "\\]" {flag=1; next} /^## \[/ {flag=0} /^\[.*\]: / {flag=0} flag' \
+            CHANGELOG.md > release-notes.md
+          if ! [ -s release-notes.md ]; then
+            echo "No CHANGELOG section found for $version" >&2
+            exit 1
+          fi
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --verify-tag \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file release-notes.md \
+            dist/install.sh dist/install.ps1 dist/statusline.sh dist/statusline.ps1 dist/SHA256SUMS

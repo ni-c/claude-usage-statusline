@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="192" viewBox="0 0 720 192" role="img" aria-label="Three examples of the status line: plenty left, getting busy, close to the limit">
+  <style>
+    .bg { fill: #0d1117; }
+    .bar { fill: #161b22; }
+    .line { font: 15px ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace; fill: #c9d1d9; white-space: pre; }
+    .note { font: 12px ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; fill: #8b949e; }
+    .green { fill: #3fb950; }
+    .yellow { fill: #d29922; }
+    .red { fill: #f85149; }
+  </style>
+  <rect class="bg" width="720" height="192" rx="10"/>
+  <path class="bar" d="M0 10a10 10 0 0 1 10-10h700a10 10 0 0 1 10 10v18H0z"/>
+  <circle cx="18" cy="14" r="5" fill="#f85149"/>
+  <circle cx="36" cy="14" r="5" fill="#d29922"/>
+  <circle cx="54" cy="14" r="5" fill="#3fb950"/>
+  <text class="note" x="24" y="54">plenty left</text>
+  <text class="line" x="24" y="76" xml:space="preserve">[Opus 5] 📁 my-project ⎇ main | <tspan class="green">ctx 12%</tspan> | <tspan class="green">3h42 18%</tspan> | <tspan class="green">4d 23%</tspan></text>
+  <text class="note" x="24" y="104">getting busy</text>
+  <text class="line" x="24" y="126" xml:space="preserve">[Opus 5] 📁 my-project ⎇ main | <tspan class="yellow">ctx 57%</tspan> | <tspan class="yellow">1h05 64%</tspan> | <tspan class="green">3d 41%</tspan></text>
+  <text class="note" x="24" y="154">close to the limit</text>
+  <text class="line" x="24" y="176" xml:space="preserve">[Opus 5] 📁 my-project ⎇ main | <tspan class="red">⚠ ctx 83%</tspan> | <tspan class="red">⚠ 0h12 91%</tspan> | <tspan class="red">⚠ 1d 88%</tspan></text>
+</svg>

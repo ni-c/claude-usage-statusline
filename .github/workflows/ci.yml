@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly, so a runner image that changes under us is noticed in quiet weeks too.
+    - cron: '0 6 * * 1'
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: shellcheck
+        run: |
+          shellcheck --version
+          shellcheck statusline.sh install.sh scripts/*.sh
+          shellcheck -s bash tests/*.bats
+      - name: PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Install-Module PSScriptAnalyzer -RequiredVersion 1.25.0 -Force -Scope CurrentUser
+          # The tests get one more exclusion: Pester's blocks share variables in a
+          # way the analyzer cannot see, so every one of them reads as unused.
+          $findings = @(Invoke-ScriptAnalyzer -Path . -Settings ./PSScriptAnalyzerSettings.psd1) +
+            @(Invoke-ScriptAnalyzer -Path ./tests -Settings ./PSScriptAnalyzerSettings.psd1 -ExcludeRule PSUseDeclaredVarsMoreThanAssignments)
+          $findings | Format-Table RuleName, ScriptName, Line, Message -AutoSize -Wrap
+          if ($findings.Count -gt 0) { exit 1 }
+      - name: The README picture matches what the script prints
+        run: scripts/render-preview.sh --check
+
+  bash:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            bash: bash
+          # macOS still ships bash 3.2 as /bin/bash; that is what statusline.sh
+          # has to run on for anyone without Homebrew's bash.
+          - os: macos-latest
+            bash: /bin/bash
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install bats
+        run: |
+          if [ "$RUNNER_OS" = macOS ]; then
+            brew install bats-core jq
+          else
+            sudo apt-get update -qq && sudo apt-get install -y -qq bats jq
+          fi
+      - run: ${{ matrix.bash }} --version | head -1
+      - run: bats tests/
+        env:
+          STATUSLINE_BASH: ${{ matrix.bash }}
+
+  windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [powershell, pwsh]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Stamped here in Git Bash rather than by the suite, which would have to guess
+      # which bash.exe is first on the PATH.
+      - name: Build release assets
+        shell: bash
+        run: scripts/stamp-release.sh 9.9.9 "$(cygpath -u "$RUNNER_TEMP")/dist"
+      # `shell:` cannot take the matrix, so cmd starts the PowerShell under test.
+      - name: Pester on ${{ matrix.shell }}
+        shell: cmd
+        env:
+          CUS_DIST: ${{ runner.temp }}\dist
+        run: ${{ matrix.shell }} -NoProfile -ExecutionPolicy Bypass -File tests\Invoke-Tests.ps1
+
+  # statusline.sh as Claude Code runs it on Windows when Git Bash is installed, with
+  # the runner's native jq.exe (which writes CRLF).
+  git-bash:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install bats
+        run: git clone --quiet --depth 1 --branch v1.14.0 https://github.com/bats-core/bats-core.git "$RUNNER_TEMP/bats"
+      - run: bash --version | head -1 && command -v jq && jq --version
+      - run: '"$RUNNER_TEMP/bats/bin/bats" tests/statusline.bats'
