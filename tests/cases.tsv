@@ -1,0 +1,60 @@
+# name	fixture	env	expected
+# Shared by statusline.bats and statusline.Tests.ps1, so both implementations
+# are held to the same bytes. Every case runs with NO_COLOR=1 and
+# CLAUDE_STATUSLINE_NOW=1800000000 unless its env column says otherwise.
+# env: "-" or KEY=VALUE pairs separated by ";" — an empty VALUE unsets KEY.
+# expected: {green} {yellow} {red} {reset} stand for the ANSI colour codes.
+full-default	full	-	[Opus 5 (1M context)] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%
+full-colour	full	NO_COLOR=	[Opus 5 (1M context)] 📁 my-repo | {green}ctx 30%{reset} | {green}0h35 30%{reset} | {red}⚠ 1d 89%{reset}
+no-emoji-1	full	CLAUDE_STATUSLINE_NO_EMOJI=1	[Opus 5 (1M context)] my-repo | ctx 30% | 0h35 30% | ! 1d 89%
+no-emoji-true	full	CLAUDE_STATUSLINE_NO_EMOJI=TRUE	[Opus 5 (1M context)] my-repo | ctx 30% | 0h35 30% | ! 1d 89%
+no-emoji-on	full	CLAUDE_STATUSLINE_NO_EMOJI=on	[Opus 5 (1M context)] my-repo | ctx 30% | 0h35 30% | ! 1d 89%
+no-emoji-0	full	CLAUDE_STATUSLINE_NO_EMOJI=0	[Opus 5 (1M context)] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%
+segments-order	full	CLAUDE_STATUSLINE_SEGMENTS=7d,model	⚠ 1d 89% [Opus 5 (1M context)]
+segments-spaces	full	CLAUDE_STATUSLINE_SEGMENTS= 5h , ctx 	0h35 30% | ctx 30%
+segments-glob	full	CLAUDE_STATUSLINE_SEGMENTS=*,bogus	[Opus 5 (1M context)] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%
+segments-case	full	CLAUDE_STATUSLINE_SEGMENTS=MODEL	[Opus 5 (1M context)] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%
+segments-duplicate	full	CLAUDE_STATUSLINE_SEGMENTS=ctx,ctx	ctx 30% | ctx 30%
+warn-raised	full	CLAUDE_STATUSLINE_WARN=90	[Opus 5 (1M context)] 📁 my-repo | ctx 30% | 0h35 30% | 1d 89%
+warn-invalid	full	CLAUDE_STATUSLINE_WARN=abc	[Opus 5 (1M context)] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%
+warn-negative	full	CLAUDE_STATUSLINE_WARN=-5	[Opus 5 (1M context)] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%
+warn-too-long	full	CLAUDE_STATUSLINE_WARN=9999999999999	[Opus 5 (1M context)] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%
+warn-zero	full	CLAUDE_STATUSLINE_WARN=0	[Opus 5 (1M context)] 📁 my-repo | ⚠ ctx 30% | ⚠ 0h35 30% | ⚠ 1d 89%
+notice-lowered	full	CLAUDE_STATUSLINE_NOTICE=10;NO_COLOR=	[Opus 5 (1M context)] 📁 my-repo | {yellow}ctx 30%{reset} | {yellow}0h35 30%{reset} | {red}⚠ 1d 89%{reset}
+now-at-5h-reset	full	CLAUDE_STATUSLINE_NOW=1800002100	[Opus 5 (1M context)] 📁 my-repo | ctx 30% | 0h00 30% | ⚠ 1d 89%
+api-key-user	api-key-user	-	[Sonnet 5] 📁 app | ctx 12%
+session-start	session-start	-	[Opus 5] 📁 app
+no-model	no-model	-	[?] 📁 app | ctx 5%
+model-id-only	model-id-only	-	[claude-opus-5] 📁 app
+model-empty	model-empty	-	[?] 📁 app
+model-escape	model-escape	-	[Opus[2J 5] 📁 app
+invalid-json	invalid	-	[?]
+empty-input	empty	-	[?]
+json-array	array	-	[?]
+json-scalar	scalar	-	[?]
+pct-zero	pct-zero	NO_COLOR=	[M] | {green}ctx 0%{reset} | {green}5h 0%{reset} | {green}7d 0%{reset}
+pct-notice	pct-notice	NO_COLOR=	[M] | {green}ctx 49%{reset} | {yellow}5h 50%{reset} | {yellow}7d 79%{reset}
+pct-warn	pct-warn	NO_COLOR=	[M] | {red}⚠ ctx 80%{reset} | {red}⚠ 5h 100%{reset} | {red}⚠ 7d 100%{reset}
+pct-odd	pct-odd	-	[M] | ctx 0% | 5h 42%
+pct-null	pct-null	-	[M]
+reset-past	reset-past	-	[M] | 0h00 10% | 0d 20%
+reset-now	reset-now	-	[M] | 0h00 10% | 0d 20%
+reset-in-1s	reset-1s	-	[M] | 0h00 10% | 1d 20%
+reset-edge	reset-edge	-	[M] | 4h59 10% | 7d 20%
+reset-over	reset-over	-	[M] | 5h00 10% | 8d 20%
+reset-float-and-string	reset-float	-	[M] | 1h00 10% | 1d 20%
+reset-invalid	reset-invalid	-	[M] | 5h 10% | 7d 20%
+cwd-root	cwd-root	-	[M] 📁 /
+cwd-windows	cwd-windows	-	[M] 📁 My Proj
+cwd-drive	cwd-drive	-	[M] 📁 C:
+cwd-unicode	cwd-unicode	-	[M] 📁 Übersicht Ärger 🚀
+cwd-trailing-slashes	cwd-trailing	-	[M] 📁 app
+cwd-control-chars	cwd-escape	-	[M] 📁 evil]0;pwnedname31m
+cwd-workspace-wins	cwd-workspace-wins	-	[M] 📁 new
+cwd-missing	cwd-missing	-	[M] | ctx 1%
+git-branch	git-branch	-	[M] 📁 proj ⎇ feature/x
+git-subdir	git-subdir	-	[M] 📁 sub ⎇ feature/x
+git-detached	git-detached	-	[M] 📁 detached ⎇ 4af7260
+git-no-repo	git-none	-	[M] 📁 plain
+git-no-emoji	git-branch	CLAUDE_STATUSLINE_NO_EMOJI=yes	[M] proj (feature/x)
+git-segment-off	git-branch	CLAUDE_STATUSLINE_SEGMENTS=model,dir	[M] 📁 proj
