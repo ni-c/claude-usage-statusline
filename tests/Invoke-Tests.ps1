@@ -8,7 +8,13 @@ $pester = '5.9.1'
 
 "PowerShell $($PSVersionTable.PSVersion) on $([Environment]::OSVersion.VersionString)"
 if (-not (Get-Module -ListAvailable Pester | Where-Object { $_.Version -eq $pester })) {
-  Install-Module Pester -RequiredVersion $pester -Force -Scope CurrentUser -SkipPublisherCheck
+  if ($PSVersionTable.PSVersion.Major -lt 6) {
+    # PowerShellGet on Windows PowerShell 5.1 does not ask the gallery for TLS 1.2
+    # by itself, and the gallery answers anything older with "no match was found".
+    [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+    Install-PackageProvider NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser | Out-Null
+  }
+  Install-Module Pester -RequiredVersion $pester -Repository PSGallery -Force -Scope CurrentUser -SkipPublisherCheck
 }
 Import-Module Pester -RequiredVersion $pester
 
