@@ -39,6 +39,10 @@ on a detached HEAD. Neither reads the index or the working tree, so neither runs
   script it installs written into it at build time. It downloads that script from its
   own release over HTTPS and refuses to install it if the checksum does not match.
   `SHA256SUMS` in every release covers all four files.
+- Every release asset carries a build provenance attestation: a Sigstore-signed
+  statement that the file was built by this repository's release workflow from that
+  tag. Check one before running it:
+  `gh attestation verify install.sh --repo ni-c/claude-usage-statusline`.
 - They change exactly one key in `settings.json`, `statusLine`, and keep a copy of the
   previous file as `settings.json.before-claude-usage-statusline`. They refuse a file
   that is not a JSON object instead of guessing, and they do not replace a status line

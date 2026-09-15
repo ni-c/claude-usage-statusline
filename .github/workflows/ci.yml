@@ -7,6 +7,7 @@ on:
   schedule:
     # Weekly, so a runner image that changes under us is noticed in quiet weeks too.
     - cron: '0 6 * * 1'
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -39,6 +40,27 @@ jobs:
           if ($findings.Count -gt 0) { exit 1 }
       - name: The README picture matches what the script prints
         run: scripts/render-preview.sh --check
+
+  # CodeQL has no analyser for bash or PowerShell, but it has one for the workflows
+  # themselves: script injection from event payloads, untrusted checkouts,
+  # over-broad tokens. That is where a repository like this one is attackable.
+  codeql:
+    # Code scanning needs GitHub Advanced Security on a private repository, which
+    # the Free plan does not have: the upload would fail. Public, it just runs.
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # init and analyze must always move together — see the codeql group in dependabot.yml.
+      - uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          languages: actions
+      - uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
 
   bash:
     strategy:

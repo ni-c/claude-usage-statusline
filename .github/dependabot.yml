@@ -5,3 +5,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    groups:
+      # init and analyze are separate dependencies to Dependabot. Ungrouped, one of
+      # them bumps first and the version mismatch fails the codeql job.
+      codeql:
+        patterns:
+          - github/codeql-action*

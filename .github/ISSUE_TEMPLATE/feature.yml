@@ -1,0 +1,24 @@
+name: Feature request
+description: Something the status line should show or do
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to see or do?
+      description: The situation, not yet the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What should the status line do?
+      description: >-
+        If it needs a field from Claude Code's status line JSON, name it — see
+        https://code.claude.com/docs/en/statusline.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Workarounds you considered
