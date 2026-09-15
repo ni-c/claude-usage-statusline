@@ -1,0 +1,53 @@
+name: Bug report
+description: The status line shows something wrong, nothing, or the installer fails
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: claude-usage-statusline version
+      placeholder: '1.0.0 (release) or commit'
+    validations:
+      required: true
+  - type: dropdown
+    id: runtime
+    attributes:
+      label: Which script runs?
+      options:
+        - statusline.sh on Linux
+        - statusline.sh on macOS
+        - statusline.sh on WSL
+        - statusline.sh under Git Bash on Windows
+        - statusline.ps1 on Windows PowerShell 5.1
+        - statusline.ps1 on PowerShell 7
+        - the installer (install.sh or install.ps1)
+    validations:
+      required: true
+  - type: input
+    id: claude-code
+    attributes:
+      label: Claude Code version
+      placeholder: 'output of `claude --version`'
+    validations:
+      required: true
+  - type: input
+    id: terminal
+    attributes:
+      label: Terminal and font
+      placeholder: 'Windows Terminal with Cascadia Code, iTerm2, kitty, …'
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you expected to see, and what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Relevant output
+      description: >-
+        The status line as printed, or the installer's output. If you can, the JSON
+        Claude Code passed in (a `tee` in front of the command captures it). Please
+        redact directory names and anything else private — this issue is public.
+      render: text

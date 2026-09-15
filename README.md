@@ -180,6 +180,11 @@ scripts/render-preview.sh                     # after changing the output format
 CI runs all of this on Linux, on macOS with its own `/bin/bash` 3.2, and on Windows with
 both Windows PowerShell 5.1 and PowerShell 7.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). The short version: both scripts print the same
+bytes, and every behaviour is a line in `tests/cases.tsv`.
+
 ## License
 
 [MIT](LICENSE)
