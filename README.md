@@ -59,6 +59,10 @@ goes into `~/.claude/claude-usage-statusline/`. The installer then sets `statusL
 settings is kept as `settings.json.before-claude-usage-statusline`. Claude Code picks up
 the change within a few seconds.
 
+To check an installer before running it, download it and verify its build provenance
+with the [GitHub CLI](https://cli.github.com):
+`gh attestation verify install.sh --repo ni-c/claude-usage-statusline`.
+
 If another status line is already configured, the installer stops and shows it to you.
 To replace it:
 
