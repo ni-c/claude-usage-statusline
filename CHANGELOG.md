@@ -21,7 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   same checks without a fuzzing engine.
 - `claude-usage-statusline.intoto.jsonl` as a release asset: the build provenance
   attestations of every other asset, so `gh attestation verify --bundle` can check a
-  download without reaching the network.
+  download without GitHub's attestation API — and with a cached trust root, without
+  any network at all.
 
 ### Fixed
 

@@ -75,13 +75,19 @@ gh attestation verify install.sh --repo ni-c/claude-usage-statusline
 ```
 
 Every release also carries `claude-usage-statusline.intoto.jsonl`: the same signed
-statements as a file, one per asset. With it the check needs no network and no
-account at all, which is the version worth running on a machine you do not trust:
+statements as a file, one line per asset. Passing it with `--bundle` checks the
+download against the file in your hands instead of GitHub's attestation API, so the
+check still works when that API is unreachable — or when this repository is not
+there any more:
 
 ```sh
 gh attestation verify install.sh --bundle claude-usage-statusline.intoto.jsonl \
   --repo ni-c/claude-usage-statusline
 ```
+
+Sigstore's trust root is still fetched over the network. Cache it once with
+`gh attestation trusted-root > root.jsonl`, add `--custom-trusted-root root.jsonl`,
+and the check needs no network at all.
 
 If another status line is already configured, the installer stops and shows it to you.
 To replace it:
