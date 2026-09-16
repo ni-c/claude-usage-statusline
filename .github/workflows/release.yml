@@ -44,10 +44,10 @@ jobs:
         with:
           subject-path: dist/*
       # The same attestation, shipped with the release rather than only stored in
-      # GitHub's attestation API: one Sigstore bundle per line, each wrapping an
-      # in-toto SLSA provenance statement about one asset. It is what makes
-      # `gh attestation verify --bundle` work with no network at all, and it is
-      # the file OpenSSF Scorecard reads to call this release signed.
+      # GitHub's attestation API: one Sigstore bundle wrapping one in-toto SLSA
+      # provenance statement that names every asset. It is what lets
+      # `gh attestation verify --bundle` check a download without that API, and it
+      # is the file OpenSSF Scorecard reads to call this release signed.
       - name: Ship the attestation with the release
         env:
           BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}

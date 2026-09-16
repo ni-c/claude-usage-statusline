@@ -44,8 +44,9 @@ on a detached HEAD. Neither reads the index or the working tree, so neither runs
   tag. Check one before running it:
   `gh attestation verify install.sh --repo ni-c/claude-usage-statusline`.
   Those statements ship with the release as well, as
-  `claude-usage-statusline.intoto.jsonl` — one Sigstore bundle per line, one line per
-  asset. Pass it with `--bundle` and the check reads the statements out of a file you
+  `claude-usage-statusline.intoto.jsonl` — a single Sigstore bundle wrapping one
+  in-toto statement that names every asset of the release, so the same file verifies
+  any of them. Pass it with `--bundle` and the check reads that statement from a file you
   hold instead of GitHub's attestation API, so it survives that API being unreachable
   and the repository being gone. Sigstore's trust root is still fetched; cache it with
   `gh attestation trusted-root` and pass `--custom-trusted-root` to verify with no
