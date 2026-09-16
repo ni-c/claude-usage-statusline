@@ -23,7 +23,7 @@ macOS and Windows.
 
 | Segment         | Name    | Meaning                                                                                                                  |
 | --------------- | ------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `[Opus 5]`      | `model` | The model answering in this session, under the name Claude Code gives it — or its bare model id if it sends no name.       |
+| `[Opus 5]`      | `model` | The model answering in this session, under the name Claude Code gives it — or its bare model id if it sends no name at all. |
 | `📁 my-project` | `dir`   | The last segment of the directory Claude Code is working in, so that a deep path still costs one short word.               |
 | `⎇ main`        | `git`   | The branch checked out in that directory, or the short commit hash on a detached HEAD. Outside a repository: nothing.      |
 | `ctx 57%`       | `ctx`   | How full the context window is. Claude Code sends the percentage; the status line only decides what colour it gets.        |
