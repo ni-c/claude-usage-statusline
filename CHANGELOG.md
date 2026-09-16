@@ -19,10 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ClusterFuzzLite over the JSON Claude Code pipes in: on every pull request, and for
   half an hour every Monday. `python3 fuzz/fuzz_statusline.py --selftest` runs the
   same checks without a fuzzing engine.
-- `claude-usage-statusline.intoto.jsonl` as a release asset: the build provenance
-  attestations of every other asset, so `gh attestation verify --bundle` can check a
-  download without GitHub's attestation API — and with a cached trust root, without
-  any network at all.
+- `claude-usage-statusline.intoto.jsonl` as a release asset: the signed build
+  provenance statement naming every other asset, so `gh attestation verify --bundle`
+  can check a download without GitHub's attestation API — and with a cached trust
+  root, without any network at all. Also attached to the 1.0.0 release.
 
 ### Fixed
 

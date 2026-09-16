@@ -75,7 +75,8 @@ gh attestation verify install.sh --repo ni-c/claude-usage-statusline
 ```
 
 Every release also carries `claude-usage-statusline.intoto.jsonl`: the same signed
-statements as a file, one line per asset. Passing it with `--bundle` checks the
+statement as a file — one Sigstore bundle naming every asset of the release, so the
+same file verifies any of them. Passing it with `--bundle` checks the
 download against the file in your hands instead of GitHub's attestation API, so the
 check still works when that API is unreachable — or when this repository is not
 there any more:
