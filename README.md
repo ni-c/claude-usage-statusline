@@ -21,10 +21,15 @@ macOS and Windows.
 [Opus 5] 📁 my-project ⎇ main | ctx 57% | 1h05 64% | 3d 41%
 ```
 
+<!-- The dir row writes its sample folder with a no-break space and a
+     non-breaking hyphen. Without them a narrow window splits the cell over
+     two lines, because a table cannot be told not to wrap: GitHub strips
+     style attributes and <nobr> alike. -->
+
 | Segment         | Name    | Meaning                                                                                                                  |
 | --------------- | ------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `[Opus 5]`      | `model` | The model answering in this session, under the name Claude Code gives it — or its bare model id if it sends no name at all. |
-| `📁 my-project` | `dir`   | The last segment of the directory Claude Code is working in, so that a deep path still costs one short word.               |
+| `📁 my‑project` | `dir`   | The last segment of the directory Claude Code is working in, so that a deep path still costs one short word.               |
 | `⎇ main`        | `git`   | The branch checked out in that directory, or the short commit hash on a detached HEAD. Outside a repository: nothing.      |
 | `ctx 57%`       | `ctx`   | How full the context window is. Claude Code sends the percentage; the status line only decides what colour it gets.        |
 | `1h05 64%`      | `5h`    | The five-hour limit: 64 % of it used, and 1 hour 5 minutes left until it resets.                                           |
