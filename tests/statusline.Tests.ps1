@@ -42,6 +42,18 @@ Describe 'statusline.ps1' {
     $result.Out | Should -BeExactly "[?] | 2h00 1%`n"
   }
 
+  # Found by fuzz/fuzz_statusline.py against statusline.sh, where a NUL made bash
+  # warn on stderr. Both implementations drop them, so both still print [AB].
+  It 'a NUL byte in the input is dropped silently' {
+    $json = '{"model":{"display_name":"A' + [char]0 + 'B"}}'
+    $result = Invoke-Script -Script $script `
+      -InputBytes ([Text.Encoding]::UTF8.GetBytes($json)) `
+      -Environment @{ NO_COLOR = '1' } -Unset $StatuslineVariables
+    $result.Out | Should -BeExactly "[AB]`n"
+    $result.Err | Should -BeNullOrEmpty
+    $result.Code | Should -Be 0
+  }
+
   It 'is plain ASCII, because Windows PowerShell 5.1 reads a BOM-less script as ANSI' {
     $bytes = [IO.File]::ReadAllBytes($script)
     @($bytes | Where-Object { $_ -gt 127 }).Count | Should -Be 0

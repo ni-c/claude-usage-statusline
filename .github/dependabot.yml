@@ -1,6 +1,6 @@
 version: 2
 updates:
-  # The only dependencies this repository has are the actions its workflows use.
+  # The actions the workflows use, and the one image the fuzzer builds in.
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -11,3 +11,14 @@ updates:
       codeql:
         patterns:
           - github/codeql-action*
+      # build_fuzzers and run_fuzzers are the same story: they share a tag and a job.
+      clusterfuzzlite:
+        patterns:
+          - google/clusterfuzzlite/*
+
+  # Exists so the digest-pinned base image of the fuzzer gets refreshed at all.
+  # It follows the v1 tag, which oss-fuzz moves; only the digest changes.
+  - package-ecosystem: docker
+    directory: /.clusterfuzzlite
+    schedule:
+      interval: weekly

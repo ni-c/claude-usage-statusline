@@ -26,7 +26,7 @@ jobs:
       - name: shellcheck
         run: |
           shellcheck --version
-          shellcheck statusline.sh install.sh scripts/*.sh
+          shellcheck statusline.sh install.sh scripts/*.sh .clusterfuzzlite/build.sh
           shellcheck -s bash tests/*.bats
       - name: PSScriptAnalyzer
         shell: pwsh

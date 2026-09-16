@@ -105,7 +105,7 @@ path_with() {
 @test "without jq it says so instead of failing" {
   skip_on_git_bash
   local p
-  p=$(path_with nojq cat date tr)
+  p=$(path_with nojq date tr)
   run env PATH="$p" "$(command -v "${STATUSLINE_BASH:-bash}")" "$ROOT/statusline.sh" <"$ROOT/tests/fixtures/full.json"
   [ "$status" -eq 0 ]
   [ "$output" = "claude-usage-statusline: jq is required (https://jqlang.org/download/)" ]
@@ -114,7 +114,7 @@ path_with() {
 @test "without git the branch segment is left out" {
   skip_on_git_bash
   local p
-  p=$(path_with nogit cat date tr jq)
+  p=$(path_with nogit date tr jq)
   run env PATH="$p" NO_COLOR=1 "$(command -v "${STATUSLINE_BASH:-bash}")" "$ROOT/statusline.sh" <"$(fixture_file git-branch)"
   [ "$status" -eq 0 ]
   [ "$output" = "[M] 📁 proj" ]
@@ -130,6 +130,18 @@ path_with() {
     "${STATUSLINE_BASH:-bash}" "$ROOT/statusline.sh" <"$ROOT/tests/fixtures/full.json"
   [ "$status" -eq 0 ]
   [ "$output" = "[Opus 5 (1M context)] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%" ]
+}
+
+# Found by fuzz/fuzz_statusline.py: a command substitution drops NUL bytes by
+# itself, but bash warns on stderr while it does, and that warning lands in the
+# prompt. statusline.ps1 drops them too, so both still print the same bytes.
+@test "a NUL byte in the input is dropped silently" {
+  local f="$WORK/nul.json"
+  printf '{"model":{"display_name":"A\000B"}}' >"$f"
+  run_statusline - "$f"
+  [ "$code" = 0 ]
+  [ -z "$err" ]
+  [ "$out" = "[AB]"$'\n' ]
 }
 
 @test "uses the current time when CLAUDE_STATUSLINE_NOW is not set" {

@@ -1,0 +1,34 @@
+# ClusterFuzzLite on every pull request: build the fuzzer, then run it for a few
+# minutes over the code this branch changed.
+#
+# Deliberately not a required status check. A fuzzer finding is worth a crash
+# report and a test case, not a blocked merge — and a five-minute run that
+# happens to time out is not a verdict on the change in front of it.
+name: Fuzz
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build the fuzzer
+        uses: google/clusterfuzzlite/actions/build_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1 # v1
+        with:
+          language: python
+          sanitizer: address
+      - name: Run the fuzzer
+        uses: google/clusterfuzzlite/actions/run_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1 # v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          fuzz-seconds: 300
+          mode: code-change
+          sanitizer: address
+          output-sarif: false

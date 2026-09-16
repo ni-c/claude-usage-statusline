@@ -20,8 +20,9 @@ script without a byte order mark in the ANSI code page.
 ```sh
 bats tests/                                   # statusline.sh and install.sh
 pwsh -File tests/Invoke-Tests.ps1             # statusline.ps1 and install.ps1
-shellcheck statusline.sh install.sh scripts/*.sh
+shellcheck statusline.sh install.sh scripts/*.sh .clusterfuzzlite/build.sh
 scripts/render-preview.sh                     # after changing the output format
+python3 fuzz/fuzz_statusline.py --selftest    # random documents, no fuzzer needed
 ```
 
 To check bash 3.2 without a Mac:
@@ -33,6 +34,18 @@ docker run --rm -v "$PWD:/w" -w /w bash:3.2 sh -c \
 
 CI runs all of it on Linux, on macOS with `/bin/bash` 3.2, on Windows under both
 Windows PowerShell 5.1 and PowerShell 7, and `statusline.sh` under Git Bash.
+
+## The fuzzer
+
+[`fuzz/fuzz_statusline.py`](fuzz/fuzz_statusline.py) throws random and
+nearly-valid documents at `statusline.sh` and holds it to four promises that no
+input may break: exit 0, nothing on stderr, exactly one line, and no control
+characters while `NO_COLOR` is set. ClusterFuzzLite runs it on every pull request
+and for half an hour every Monday; `--selftest` is the same oracle without a
+fuzzing engine, and it is the quick way to check a change to the output.
+
+It has already earned its place once: it found `statusline.sh` letting bash print
+a warning about a NUL byte, straight into the prompt.
 
 ## Expectations
 

@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="720" height="192" viewBox="0 0 720 192" role="img" aria-label="Three examples of the status line: plenty left, getting busy, close to the limit">
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="200" viewBox="0 0 800 200" role="img" aria-label="Three examples of the status line: plenty left, getting busy, close to the limit">
   <style>
     .bg { fill: #0d1117; }
     .bar { fill: #161b22; }
@@ -8,15 +8,15 @@
     .yellow { fill: #d29922; }
     .red { fill: #f85149; }
   </style>
-  <rect class="bg" width="720" height="192" rx="10"/>
-  <path class="bar" d="M0 10a10 10 0 0 1 10-10h700a10 10 0 0 1 10 10v18H0z"/>
+  <rect class="bg" width="800" height="200" rx="10"/>
+  <path class="bar" d="M0 10a10 10 0 0 1 10-10h780a10 10 0 0 1 10 10v18H0z"/>
   <circle cx="18" cy="14" r="5" fill="#f85149"/>
   <circle cx="36" cy="14" r="5" fill="#d29922"/>
   <circle cx="54" cy="14" r="5" fill="#3fb950"/>
-  <text class="note" x="24" y="54">plenty left</text>
-  <text class="line" x="24" y="76" xml:space="preserve">[Opus 5] 📁 my-project ⎇ main | <tspan class="green">ctx 12%</tspan> | <tspan class="green">3h42 18%</tspan> | <tspan class="green">4d 23%</tspan></text>
-  <text class="note" x="24" y="104">getting busy</text>
-  <text class="line" x="24" y="126" xml:space="preserve">[Opus 5] 📁 my-project ⎇ main | <tspan class="yellow">ctx 57%</tspan> | <tspan class="yellow">1h05 64%</tspan> | <tspan class="green">3d 41%</tspan></text>
-  <text class="note" x="24" y="154">close to the limit</text>
-  <text class="line" x="24" y="176" xml:space="preserve">[Opus 5] 📁 my-project ⎇ main | <tspan class="red">⚠ ctx 83%</tspan> | <tspan class="red">⚠ 0h12 91%</tspan> | <tspan class="red">⚠ 1d 88%</tspan></text>
+  <text class="note" x="24" y="58">plenty left</text>
+  <text class="line" x="24" y="80" xml:space="preserve">[Opus 5] 📁 my-project ⎇ main | <tspan class="green">ctx 12%</tspan> | <tspan class="green">3h42 18%</tspan> | <tspan class="green">4d 23%</tspan></text>
+  <text class="note" x="24" y="110">getting busy</text>
+  <text class="line" x="24" y="132" xml:space="preserve">[Opus 5] 📁 my-project ⎇ main | <tspan class="yellow">ctx 57%</tspan> | <tspan class="yellow">1h05 64%</tspan> | <tspan class="green">3d 41%</tspan></text>
+  <text class="note" x="24" y="162">close to the limit</text>
+  <text class="line" x="24" y="184" xml:space="preserve">[Opus 5] 📁 my-project ⎇ main | <tspan class="red">⚠ ctx 83%</tspan> | <tspan class="red">⚠ 0h12 91%</tspan> | <tspan class="red">⚠ 1d 88%</tspan></text>
 </svg>

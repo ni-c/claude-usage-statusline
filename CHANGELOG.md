@@ -10,6 +10,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-09-16
+
+### Added
+
+- An OpenSSF Scorecard run, weekly and on every push to `main`, reporting into the
+  Security tab next to CodeQL. The badge is the second in the row.
+- ClusterFuzzLite over the JSON Claude Code pipes in: on every pull request, and for
+  half an hour every Monday. `python3 fuzz/fuzz_statusline.py --selftest` runs the
+  same checks without a fuzzing engine.
+- `claude-usage-statusline.intoto.jsonl` as a release asset: the build provenance
+  attestations of every other asset, so `gh attestation verify --bundle` can check a
+  download without GitHub's attestation API — and with a cached trust root, without
+  any network at all.
+
+### Fixed
+
+- A NUL byte anywhere in the input made bash print `warning: command substitution:
+  ignored null byte in input` into the prompt. Both implementations now drop NUL
+  bytes silently, and still print the same bytes as each other. Found by the fuzzer.
+
+### Changed
+
+- The picture in the README spans its full width, and the segment table names the
+  key each segment answers to in `CLAUDE_STATUSLINE_SEGMENTS`.
+
 ## [1.0.0] - 2026-09-15
 
 ### Added
@@ -33,5 +58,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A build provenance attestation for every release asset, checkable with
   `gh attestation verify <file> --repo ni-c/claude-usage-statusline`.
 
-[Unreleased]: https://github.com/ni-c/claude-usage-statusline/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/ni-c/claude-usage-statusline/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/ni-c/claude-usage-statusline/releases/tag/v1.0.1
 [1.0.0]: https://github.com/ni-c/claude-usage-statusline/releases/tag/v1.0.0

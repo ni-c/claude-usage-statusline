@@ -1,0 +1,36 @@
+# The longer weekly fuzzing run, alongside the weekly CI and Scorecard runs.
+#
+# There is no storage repository behind it, so the corpus does not survive from
+# one week to the next. For a one-line parser with a handful of fields that is a
+# fair trade against a second repository to maintain: half an hour of fresh
+# random documents covers this input space many times over.
+name: Fuzz (weekly)
+
+on:
+  schedule:
+    - cron: '0 4 * * 1' # Mondays, ahead of Scorecard at 05:30 and CI at 06:00
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build the fuzzer
+        uses: google/clusterfuzzlite/actions/build_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1 # v1
+        with:
+          language: python
+          sanitizer: address
+      - name: Run the fuzzer
+        uses: google/clusterfuzzlite/actions/run_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1 # v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          fuzz-seconds: 1800
+          mode: batch
+          sanitizer: address
+          output-sarif: false
