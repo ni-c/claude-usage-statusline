@@ -43,6 +43,10 @@ on a detached HEAD. Neither reads the index or the working tree, so neither runs
   statement that the file was built by this repository's release workflow from that
   tag. Check one before running it:
   `gh attestation verify install.sh --repo ni-c/claude-usage-statusline`.
+  Those statements ship with the release as well, as
+  `claude-usage-statusline.intoto.jsonl` — one Sigstore bundle per line, one line per
+  asset. Pass it with `--bundle` and the check runs offline, against a file you hold
+  rather than an API you have to reach and trust to answer honestly.
 - They change exactly one key in `settings.json`, `statusLine`, and keep a copy of the
   previous file as `settings.json.before-claude-usage-statusline`. They refuse a file
   that is not a JSON object instead of guessing, and they do not replace a status line

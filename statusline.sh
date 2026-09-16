@@ -56,7 +56,10 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 0
 fi
 
-input=$(cat)
+# tr rather than cat: a command substitution drops NUL bytes by itself, but bash
+# warns on stderr while it does, and a warning in the prompt is exactly what a
+# status line must not produce. Same one process, no warning.
+input=$(tr -d '\000')
 
 {
   IFS= read -r MODEL

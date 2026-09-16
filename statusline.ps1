@@ -92,6 +92,10 @@ function Get-FirstField($Object, [string[][]]$Paths) {
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 $reader = New-Object System.IO.StreamReader([Console]::OpenStandardInput(), $utf8)
 $raw = $reader.ReadToEnd()
+# statusline.sh drops NUL bytes before jq sees the document, because bash cannot
+# carry one through a command substitution. Drop them here too, or the two
+# implementations would disagree on an input that contains one.
+$raw = $raw.Replace([string][char]0, '')
 
 $data = $null
 try {

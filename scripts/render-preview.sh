@@ -68,13 +68,20 @@ to_tspans() {
   done
 }
 
+# The canvas. The README shows it at width="100%", so this is really the aspect
+# ratio plus the size the text renders at when GitHub's content column is about
+# this wide — which is what keeps the line legible at its natural size instead of
+# being blown up. Widening it here widens the terminal, not the type.
+WIDTH=800
+HEIGHT=200
+
 render() {
   local relaxed busy critical
   relaxed=$(sample 12 18 13320 23 300000)
   busy=$(sample 57 64 3900 41 200000)
   critical=$(sample 83 91 720 88 50000)
   cat <<EOF
-<svg xmlns="http://www.w3.org/2000/svg" width="720" height="192" viewBox="0 0 720 192" role="img" aria-label="Three examples of the status line: plenty left, getting busy, close to the limit">
+<svg xmlns="http://www.w3.org/2000/svg" width="$WIDTH" height="$HEIGHT" viewBox="0 0 $WIDTH $HEIGHT" role="img" aria-label="Three examples of the status line: plenty left, getting busy, close to the limit">
   <style>
     .bg { fill: #0d1117; }
     .bar { fill: #161b22; }
@@ -84,17 +91,17 @@ render() {
     .yellow { fill: #d29922; }
     .red { fill: #f85149; }
   </style>
-  <rect class="bg" width="720" height="192" rx="10"/>
-  <path class="bar" d="M0 10a10 10 0 0 1 10-10h700a10 10 0 0 1 10 10v18H0z"/>
+  <rect class="bg" width="$WIDTH" height="$HEIGHT" rx="10"/>
+  <path class="bar" d="M0 10a10 10 0 0 1 10-10h$((WIDTH - 20))a10 10 0 0 1 10 10v18H0z"/>
   <circle cx="18" cy="14" r="5" fill="#f85149"/>
   <circle cx="36" cy="14" r="5" fill="#d29922"/>
   <circle cx="54" cy="14" r="5" fill="#3fb950"/>
-  <text class="note" x="24" y="54">plenty left</text>
-  <text class="line" x="24" y="76" xml:space="preserve">$(to_tspans "$relaxed")</text>
-  <text class="note" x="24" y="104">getting busy</text>
-  <text class="line" x="24" y="126" xml:space="preserve">$(to_tspans "$busy")</text>
-  <text class="note" x="24" y="154">close to the limit</text>
-  <text class="line" x="24" y="176" xml:space="preserve">$(to_tspans "$critical")</text>
+  <text class="note" x="24" y="58">plenty left</text>
+  <text class="line" x="24" y="80" xml:space="preserve">$(to_tspans "$relaxed")</text>
+  <text class="note" x="24" y="110">getting busy</text>
+  <text class="line" x="24" y="132" xml:space="preserve">$(to_tspans "$busy")</text>
+  <text class="note" x="24" y="162">close to the limit</text>
+  <text class="line" x="24" y="184" xml:space="preserve">$(to_tspans "$critical")</text>
 </svg>
 EOF
 }

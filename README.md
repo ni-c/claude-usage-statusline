@@ -1,7 +1,12 @@
 # claude-usage-statusline
 
+<!-- badges: start -->
+
 [![CI](https://github.com/ni-c/claude-usage-statusline/actions/workflows/ci.yml/badge.svg)](https://github.com/ni-c/claude-usage-statusline/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ni-c/claude-usage-statusline/badge)](https://scorecard.dev/viewer/?uri=github.com/ni-c/claude-usage-statusline)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+<!-- badges: end -->
 
 A status line for [Claude Code](https://code.claude.com) that shows how much of your
 rate limits you have used, and how long until they reset. It also shows the model,
@@ -9,21 +14,24 @@ the folder, the git branch and how full the context window is. It runs on Linux,
 macOS and Windows.
 
 <p align="center">
-  <img src="docs/preview.svg" alt="Three examples of the status line: plenty left, getting busy, close to the limit" width="720">
+  <img src="docs/preview.svg" alt="Three examples of the status line: plenty left, getting busy, close to the limit" width="100%">
 </p>
 
 ```text
 [Opus 5] 📁 my-project ⎇ main | ctx 57% | 1h05 64% | 3d 41%
 ```
 
-| Segment      | Meaning                                                                     |
-| ------------ | --------------------------------------------------------------------------- |
-| `[Opus 5]`   | The model of this session                                                   |
-| `📁 my-project` | The folder Claude Code is working in                                     |
-| `⎇ main`     | The git branch, or the short commit hash on a detached HEAD                 |
-| `ctx 57%`    | How full the context window is                                              |
-| `1h05 64%`   | The 5-hour limit: 64 % used, resets in 1 hour 5 minutes                     |
-| `3d 41%`     | The weekly limit: 41 % used, resets within 3 days                           |
+| Segment         | Name    | Meaning                                                                                                                  |
+| --------------- | ------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `[Opus 5]`      | `model` | The model answering in this session, under the name Claude Code gives it — or its bare model id if it sends no name.       |
+| `📁 my-project` | `dir`   | The last segment of the directory Claude Code is working in, so that a deep path still costs one short word.               |
+| `⎇ main`        | `git`   | The branch checked out in that directory, or the short commit hash on a detached HEAD. Outside a repository: nothing.      |
+| `ctx 57%`       | `ctx`   | How full the context window is. Claude Code sends the percentage; the status line only decides what colour it gets.        |
+| `1h05 64%`      | `5h`    | The five-hour limit: 64 % of it used, and 1 hour 5 minutes left until it resets.                                           |
+| `3d 41%`        | `7d`    | The weekly limit: 41 % of it used, and at most 3 days until it resets — whole days, rounded up, so `1d` means today.       |
+
+The names in the middle column are the ones `CLAUDE_STATUSLINE_SEGMENTS` takes, in
+[Configuration](#configuration) below.
 
 Each percentage turns yellow at 50 % and red with a `⚠` at 80 %.
 
@@ -61,7 +69,19 @@ the change within a few seconds.
 
 To check an installer before running it, download it and verify its build provenance
 with the [GitHub CLI](https://cli.github.com):
-`gh attestation verify install.sh --repo ni-c/claude-usage-statusline`.
+
+```sh
+gh attestation verify install.sh --repo ni-c/claude-usage-statusline
+```
+
+Every release also carries `claude-usage-statusline.intoto.jsonl`: the same signed
+statements as a file, one per asset. With it the check needs no network and no
+account at all, which is the version worth running on a machine you do not trust:
+
+```sh
+gh attestation verify install.sh --bundle claude-usage-statusline.intoto.jsonl \
+  --repo ni-c/claude-usage-statusline
+```
 
 If another status line is already configured, the installer stops and shows it to you.
 To replace it:
