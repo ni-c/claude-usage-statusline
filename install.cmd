@@ -297,16 +297,20 @@ del "%SETTINGS_TMP%" 2>NUL
 exit /b 0
 
 rem setlocal is cmd's env -u: NO_COLOR and the missing CLAUDE_STATUSLINE_SEGMENTS reach
-rem the child only. The two findstr calls together are `test "$probe" = "[ok]"`: the
-rem first requires a line that is exactly [ok], the second that no line differs from it.
-rem One pipeline would only prove that [ok] appeared somewhere.
+rem the child only.
+rem
+rem The expectation is written by the same shell that writes the output, and the two are
+rem then compared as bytes, so `test "$probe" = "[ok]"` means here exactly what it means
+rem in install.sh, and nothing hangs on how a Windows tool splits lines. findstr cannot
+rem do this job: against a file Git Bash produced, with its single trailing LF, it calls
+rem a correct [ok] wrong.
 :probe
 setlocal
 set "NO_COLOR=1"
 set "CLAUDE_STATUSLINE_SEGMENTS="
 jq -nc --arg n ok "{model:{display_name:$n}}" | "%GIT_BASH%" "%TARGET_FWD%" >"%WORK%\probe.txt" 2>&1
-findstr /x /c:"[ok]" "%WORK%\probe.txt" >NUL || exit /b 1
-findstr /v /x /c:"[ok]" "%WORK%\probe.txt" >NUL && exit /b 1
+"%GIT_BASH%" -c "printf '[ok]\n'" >"%WORK%\expect.txt" 2>NUL
+fc /b "%WORK%\probe.txt" "%WORK%\expect.txt" >NUL 2>&1 || exit /b 1
 exit /b 0
 
 rem ---------------------------------------------------------------- failures
