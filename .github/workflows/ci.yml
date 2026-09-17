@@ -137,4 +137,7 @@ jobs:
           where certutil.exe || exit /b 1
           where jq.exe || exit /b 1
           if not exist "%ProgramFiles%\Git\bin\bash.exe" exit /b 1
-      - run: '"$RUNNER_TEMP/bats/bin/bats" tests/statusline.bats tests/install-cmd.bats'
+      # --print-output-on-failure: without it a failing install.cmd case shows only the
+      # assertion that tripped, and the one thing worth seeing — what cmd.exe, jq or the
+      # installer actually printed — is dropped.
+      - run: '"$RUNNER_TEMP/bats/bin/bats" --print-output-on-failure tests/statusline.bats tests/install-cmd.bats'
