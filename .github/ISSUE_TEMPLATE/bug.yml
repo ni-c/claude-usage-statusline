@@ -20,7 +20,9 @@ body:
         - statusline.sh under Git Bash on Windows
         - statusline.ps1 on Windows PowerShell 5.1
         - statusline.ps1 on PowerShell 7
-        - the installer (install.sh or install.ps1)
+        - the installer (install.sh)
+        - the installer (install.ps1)
+        - the installer (install.cmd)
     validations:
       required: true
   - type: input

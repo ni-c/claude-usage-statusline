@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-17
+
+### Added
+
+- `install.cmd`, a third installer: native cmd.exe, no PowerShell anywhere. It downloads
+  `statusline.sh` from its own release, checks it against the SHA-256 written into it
+  with `certutil`, and points `statusLine` at `bash '<path>/statusline.sh'` — so the
+  status line runs through Git Bash and `powershell.exe` is never involved. For machines
+  where PowerShell is locked down, and for anyone who lives in the command prompt. Needs
+  `curl.exe` and `certutil` (Windows 10 1803 and newer), jq on the `PATH`, and Git for
+  Windows. `SHA256SUMS` now covers five files.
+
 ## [1.0.1] - 2026-09-16
 
 ### Added
@@ -58,6 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A build provenance attestation for every release asset, checkable with
   `gh attestation verify <file> --repo ni-c/claude-usage-statusline`.
 
-[Unreleased]: https://github.com/ni-c/claude-usage-statusline/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/ni-c/claude-usage-statusline/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/ni-c/claude-usage-statusline/releases/tag/v1.1.0
 [1.0.1]: https://github.com/ni-c/claude-usage-statusline/releases/tag/v1.0.1
 [1.0.0]: https://github.com/ni-c/claude-usage-statusline/releases/tag/v1.0.0

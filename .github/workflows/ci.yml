@@ -113,7 +113,8 @@ jobs:
         run: ${{ matrix.shell }} -NoProfile -ExecutionPolicy Bypass -File tests\Invoke-Tests.ps1
 
   # statusline.sh as Claude Code runs it on Windows when Git Bash is installed, with
-  # the runner's native jq.exe (which writes CRLF).
+  # the runner's native jq.exe (which writes CRLF) — and install.cmd, which puts that
+  # pair together. The job id stays git-bash: it is the name of the status check.
   git-bash:
     runs-on: windows-latest
     defaults:
@@ -126,4 +127,17 @@ jobs:
       - name: Install bats
         run: git clone --quiet --depth 1 --branch v1.14.0 https://github.com/bats-core/bats-core.git "$RUNNER_TEMP/bats"
       - run: bash --version | head -1 && command -v jq && jq --version
-      - run: '"$RUNNER_TEMP/bats/bin/bats" tests/statusline.bats'
+      # install.cmd needs all four of these. A missing one has to fail here rather
+      # than be discovered in somebody's terminal — and the step above only proves
+      # jq is there for Git Bash, not for cmd.exe.
+      - name: cmd.exe finds what install.cmd needs
+        shell: cmd
+        run: |
+          where curl.exe || exit /b 1
+          where certutil.exe || exit /b 1
+          where jq.exe || exit /b 1
+          if not exist "%ProgramFiles%\Git\bin\bash.exe" exit /b 1
+      # --print-output-on-failure: without it a failing install.cmd case shows only the
+      # assertion that tripped, and the one thing worth seeing — what cmd.exe, jq or the
+      # installer actually printed — is dropped.
+      - run: '"$RUNNER_TEMP/bats/bin/bats" --print-output-on-failure tests/statusline.bats tests/install-cmd.bats'

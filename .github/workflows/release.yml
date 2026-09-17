@@ -70,5 +70,6 @@ jobs:
             --verify-tag \
             --title "$GITHUB_REF_NAME" \
             --notes-file release-notes.md \
-            dist/install.sh dist/install.ps1 dist/statusline.sh dist/statusline.ps1 \
+            dist/install.sh dist/install.ps1 dist/install.cmd \
+            dist/statusline.sh dist/statusline.ps1 \
             dist/SHA256SUMS dist/claude-usage-statusline.intoto.jsonl

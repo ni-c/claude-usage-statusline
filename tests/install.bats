@@ -197,7 +197,7 @@ run_configured() {
   [ "$status" -eq 2 ]
 }
 
-@test "stamp-release bakes version and checksums into both installers" {
+@test "stamp-release bakes version and checksums into all three installers" {
   grep -qx "VERSION='9.9.9'" "$DIST/install.sh"
   grep -qx "\$Version = '9.9.9'" "$DIST/install.ps1"
   local sh_sum ps_sum
@@ -205,5 +205,39 @@ run_configured() {
   ps_sum=$(grep '  statusline.ps1$' "$DIST/SHA256SUMS" | cut -d' ' -f1)
   grep -qx "SHA256='$sh_sum'" "$DIST/install.sh"
   grep -qx "\$Sha256 = '$ps_sum'" "$DIST/install.ps1"
-  [ "$(wc -l <"$DIST/SHA256SUMS")" -eq 4 ]
+  # install.cmd installs statusline.sh, so it carries install.sh's checksum, not the
+  # PowerShell one. The CR has to come off first: -x anchors at the end of the line,
+  # and the CR is part of it.
+  tr -d '\r' <"$DIST/install.cmd" | grep -qx 'set "VERSION=9.9.9"'
+  tr -d '\r' <"$DIST/install.cmd" | grep -qx "set \"SHA256=$sh_sum\""
+  [ "$(wc -l <"$DIST/SHA256SUMS")" -eq 5 ]
+}
+
+# The bytes of install.cmd are load-bearing twice over: cmd.exe is unreliable on
+# LF-only line endings and reads the file in the OEM code page, and stamp-release.sh
+# substitutes into it with a pattern that a "helpful" [[:space:]]*$ would break by
+# eating the CR of exactly that one line. Both the source and the stamped copy.
+@test "install.cmd is CRLF and plain ASCII" {
+  local f crs lfs
+  for f in "$ROOT/install.cmd" "$DIST/install.cmd"; do
+    crs=$(LC_ALL=C tr -cd '\r' <"$f" | wc -c)
+    lfs=$(LC_ALL=C tr -cd '\n' <"$f" | wc -c)
+    [ "$crs" -eq "$lfs" ]
+    ! LC_ALL=C grep -q $'\r\r' "$f"
+    [ -z "$(LC_ALL=C tr -d '\015\012\040-\176' <"$f")" ]
+  done
+}
+
+# Nothing lints batch, so the handful of structural rules that actually bite are
+# assertions instead. The placeholder counts front-run a stamp-release failure from
+# tag time to the pull request.
+@test "install.cmd keeps the shape stamp-release and cmd.exe expect" {
+  local body
+  body=$(tr -d '\r' <"$ROOT/install.cmd")
+  [ "$(printf '%s\n' "$body" | head -1)" = '@echo off' ]
+  printf '%s\n' "$body" | grep -q '^setlocal '
+  [ "$(printf '%s\n' "$body" | grep -c '^set "VERSION="')" -eq 1 ]
+  [ "$(printf '%s\n' "$body" | grep -c '^set "SHA256="')" -eq 1 ]
+  [ -z "$(LC_ALL=C tr -cd '\011' <"$ROOT/install.cmd")" ]
+  [ "$(tail -c 1 "$ROOT/install.cmd" | od -An -tx1 | tr -d ' \n')" = '0a' ]
 }

@@ -66,9 +66,28 @@ irm https://github.com/ni-c/claude-usage-statusline/releases/latest/download/ins
 Needs nothing else: it runs on the Windows PowerShell that comes with every Windows,
 and on PowerShell 7.
 
+**Windows (cmd.exe)**
+
+cmd.exe cannot pipe a download into an interpreter, so this one downloads first and then
+runs — which also means you can read it before you do:
+
+```bat
+curl -fsSL -o "%TEMP%\install.cmd" https://github.com/ni-c/claude-usage-statusline/releases/latest/download/install.cmd && "%TEMP%\install.cmd"
+```
+
+This is the PowerShell-free way: it installs `statusline.sh` and points Claude Code at
+it through Git Bash, so neither the installer nor the status line ever runs
+`powershell.exe`. It needs [Git for Windows](https://git-scm.com/download/win) and
+[jq](https://jqlang.org/download/) (`winget install jqlang.jq`) on the `PATH`, jq both
+to install and every time the status line runs; `curl.exe` and `certutil` come with
+Windows 10 1803 and newer. **If PowerShell works on your machine, `install.ps1` above is
+the simpler choice — it needs nothing.**
+
 The installer comes with a release. It downloads the status line script from that same
-release and checks it against a SHA-256 checksum written into the installer. The script
-goes into `~/.claude/claude-usage-statusline/`. The installer then sets `statusLine` in
+release and checks it against a SHA-256 checksum written into the installer —
+`install.sh` and `install.cmd` install `statusline.sh`, `install.ps1` installs
+`statusline.ps1`. The script goes into `~/.claude/claude-usage-statusline/`. The
+installer then sets `statusLine` in
 `~/.claude/settings.json` and leaves every other setting alone. A copy of your previous
 settings is kept as `settings.json.before-claude-usage-statusline`. Claude Code picks up
 the change within a few seconds.
@@ -107,11 +126,18 @@ curl -fsSL https://github.com/ni-c/claude-usage-statusline/releases/latest/downl
 & ([scriptblock]::Create((irm https://github.com/ni-c/claude-usage-statusline/releases/latest/download/install.ps1))) -Force
 ```
 
+```bat
+"%TEMP%\install.cmd" --force
+```
+
+The `.cmd` is still where the install step downloaded it; if you cleared `%TEMP%`, fetch
+it again with the `curl` line above.
+
 `CLAUDE_CONFIG_DIR` is respected if you keep your Claude Code configuration somewhere else.
 
 ### Manual install
 
-Download `statusline.sh` (or `statusline.ps1` on Windows) from the
+Download `statusline.sh` (or `statusline.ps1`) from the
 [latest release](https://github.com/ni-c/claude-usage-statusline/releases/latest) and
 point `statusLine` at it in `~/.claude/settings.json`:
 
@@ -141,6 +167,19 @@ Use forward slashes and single quotes on Windows. Claude Code runs the command t
 Git Bash if it is installed and through PowerShell if it is not, and that way the same
 line works in both. `refreshInterval` makes the countdown keep moving while Claude Code
 is idle.
+
+Or, on Windows without PowerShell — this is what `install.cmd` writes, and it needs Git
+Bash, where the line above works either way:
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "bash 'C:/Users/you/.claude/claude-usage-statusline/statusline.sh'",
+    "refreshInterval": 30
+  }
+}
+```
 
 ## Configuration
 
@@ -174,13 +213,26 @@ curl -fsSL https://github.com/ni-c/claude-usage-statusline/releases/latest/downl
 & ([scriptblock]::Create((irm https://github.com/ni-c/claude-usage-statusline/releases/latest/download/install.ps1))) -Uninstall
 ```
 
+```bat
+"%TEMP%\install.cmd" --uninstall
+```
+
 This removes the `statusLine` entry, but only if it points at this status line, and
-deletes `~/.claude/claude-usage-statusline/`.
+deletes `~/.claude/claude-usage-statusline/`. Any of the three does that, whichever one
+installed it.
 
 ## Troubleshooting
 
-- **The line says `jq is required`.** Install jq, see above. On Windows, use
-  `install.ps1`, which does not need jq.
+- **The line says `jq is required`.** Install jq, see above. On Windows, `install.ps1`
+  needs no jq at all — `install.cmd` needs it both to install and every time the status
+  line runs.
+- **`install.cmd` says Git for Windows is required.** Install
+  [Git for Windows](https://git-scm.com/download/win), or use `install.ps1`, which needs
+  nothing. Claude Code runs the bash status line through Git Bash.
+- **`install.cmd` says `curl.exe` is required.** Windows 8.1 and older do not ship it.
+  Use `install.ps1`.
+- **The `install.cmd` window closes before you can read it.** It was double-clicked. Run
+  it from an open command prompt.
 - **Boxes instead of icons.** Your terminal font has no `📁`, `⎇` or `⚠`. Set
   `CLAUDE_STATUSLINE_NO_EMOJI=1`.
 - **No `5h`/`7d` segments.** Rate limits are only reported for Pro and Max
@@ -204,14 +256,16 @@ PowerShell 7). Both are tested against the same list of cases in
 ## Development
 
 ```sh
-bats tests/                                   # statusline.sh and install.sh
+bats tests/                                   # statusline.sh, install.sh, install.cmd
 pwsh -File tests/Invoke-Tests.ps1             # statusline.ps1 and install.ps1
 shellcheck statusline.sh install.sh scripts/*.sh
 scripts/render-preview.sh                     # after changing the output format
 ```
 
-CI runs all of this on Linux, on macOS with its own `/bin/bash` 3.2, and on Windows with
-both Windows PowerShell 5.1 and PowerShell 7.
+The `install.cmd` cases skip unless there is a `cmd.exe`; the checks on its bytes run
+everywhere. CI runs all of this on Linux, on macOS with its own `/bin/bash` 3.2, and on
+Windows with both Windows PowerShell 5.1 and PowerShell 7, plus `install.cmd` under
+cmd.exe.
 
 ## Contributing
 
