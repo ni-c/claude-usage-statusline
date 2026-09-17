@@ -23,7 +23,10 @@ setup() {
   CONFIG="$BATS_TEST_TMPDIR/config dir"
   SETTINGS="$CONFIG/settings.json"
   INSTALLED="$CONFIG/claude-usage-statusline/statusline.sh"
-  mkdir -p "$HOME"
+  # install.cmd falls back to %USERPROFILE%, which on Windows is not $HOME. Redirecting
+  # it is what keeps a test out of the real profile of whoever runs the suite.
+  PROFILE="$BATS_TEST_TMPDIR/profile"
+  mkdir -p "$HOME" "$PROFILE"
 }
 
 needs_cmd() {
@@ -33,6 +36,8 @@ needs_cmd() {
   CLAUDE_CONFIG_DIR=$(cygpath -w "$CONFIG")
   export CLAUDE_STATUSLINE_SOURCE
   CLAUDE_STATUSLINE_SOURCE=$(cygpath -w "$DIST")
+  export USERPROFILE
+  USERPROFILE=$(cygpath -w "$PROFILE")
 }
 
 # //c so that MSYS hands cmd.exe a /c it recognises instead of rewriting it as a path.
@@ -81,7 +86,7 @@ run_configured() {
   unset CLAUDE_CONFIG_DIR
   install
   [ "$status" -eq 0 ]
-  [ -f "$HOME/.claude/claude-usage-statusline/statusline.sh" ]
+  [ -f "$PROFILE/.claude/claude-usage-statusline/statusline.sh" ]
 }
 
 # A ' cannot go into bash '<path>', so it is refused rather than guessed at — the same
