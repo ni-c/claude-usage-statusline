@@ -1,4 +1,9 @@
-# LF everywhere, on Windows checkouts too: bash cannot run a script with CRLF, and
+# LF by default, on Windows checkouts too: bash cannot run a script with CRLF, and
 # cases.tsv and the fixtures are compared byte for byte.
 * text=auto eol=lf
 *.svg text eol=lf
+# install.cmd is the exception: cmd.exe is unreliable on an LF-only batch file, and
+# eol=crlf works on every platform — so the release built on Linux ships CRLF too.
+# The blob stays LF, only the working tree is CRLF, which keeps diffs readable.
+*.cmd text eol=crlf
+*.bat text eol=crlf

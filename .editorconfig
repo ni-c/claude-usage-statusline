@@ -14,3 +14,6 @@ trim_trailing_whitespace = false
 
 [*.md]
 trim_trailing_whitespace = false
+
+[*.cmd]
+end_of_line = crlf

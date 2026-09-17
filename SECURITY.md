@@ -32,13 +32,17 @@ on a detached HEAD. Neither reads the index or the working tree, so neither runs
 
 ## What the installers do
 
-`curl … | bash` and `irm … | iex` run code from the internet. Read `install.sh` or
-`install.ps1` from the release first if you would rather not.
+`curl … | bash` and `irm … | iex` run code from the internet. Read `install.sh`,
+`install.ps1` or `install.cmd` from the release first if you would rather not —
+`install.cmd` you have to download before running it anyway, because cmd.exe cannot
+pipe a download into an interpreter.
 
 - The installers are release assets, and each has its version and the SHA-256 of the
   script it installs written into it at build time. It downloads that script from its
   own release over HTTPS and refuses to install it if the checksum does not match.
-  `SHA256SUMS` in every release covers all four files.
+  `install.cmd` installs `statusline.sh` and so carries the same checksum `install.sh`
+  does, and checks it with `certutil -hashfile`. `SHA256SUMS` in every release covers
+  all five files.
 - Every release asset carries a build provenance attestation: a Sigstore-signed
   statement that the file was built by this repository's release workflow from that
   tag. Check one before running it:
@@ -55,6 +59,13 @@ on a detached HEAD. Neither reads the index or the working tree, so neither runs
   previous file as `settings.json.before-claude-usage-statusline`. They refuse a file
   that is not a JSON object instead of guessing, and they do not replace a status line
   that belongs to something else unless you pass `--force` / `-Force`.
-- On Windows, the command they write runs `powershell -ExecutionPolicy Bypass` for this
-  one script. The execution policy is a guard against running scripts by accident, not
-  a security boundary. The installed file is the one whose checksum was just verified.
+- On Windows, the command `install.ps1` writes runs `powershell -ExecutionPolicy Bypass`
+  for this one script. The execution policy is a guard against running scripts by
+  accident, not a security boundary. The installed file is the one whose checksum was
+  just verified.
+- `install.cmd` writes a `bash '…'` command instead, so no execution policy is involved
+  — but jq is then a dependency of the status line itself, not only of the installer.
+  It is also the one installer written in a language where a `&` in a directory name is
+  syntax rather than data, so it never holds such text: jq reads and writes
+  `settings.json` file to file, jq renders every message that contains a path, and the
+  batch file branches only on exit codes and on words it chose itself.

@@ -5,7 +5,7 @@
 #
 # The installers get the version and the SHA-256 of the script they install baked
 # in, so a release installer only ever installs the exact bytes released with it.
-# SHA256SUMS covers all four assets for anyone who wants to check by hand.
+# SHA256SUMS covers all five assets for anyone who wants to check by hand.
 set -euo pipefail
 
 version=${1:?usage: stamp-release.sh VERSION OUTDIR}
@@ -35,12 +35,20 @@ stamp() {
   sed "s|$2|$3|" "$1" >"$1.tmp" && mv "$1.tmp" "$1"
 }
 
-cp "$root/install.sh" "$root/install.ps1" "$out/"
+cp "$root/install.sh" "$root/install.ps1" "$root/install.cmd" "$out/"
 stamp "$out/install.sh" "^VERSION=''\$" "VERSION='$version'"
 stamp "$out/install.sh" "^SHA256=''\$" "SHA256='$sh_sum'"
 stamp "$out/install.ps1" "^\\\$Version = ''\$" "\$Version = '$version'"
 stamp "$out/install.ps1" "^\\\$Sha256 = ''\$" "\$Sha256 = '$ps_sum'"
+# install.cmd installs statusline.sh, so it carries the same checksum install.sh does.
+# No $ anchor: the file is CRLF, and $ matches before the LF but after the CR, so an
+# anchored pattern finds nothing. A CR-tolerant class like [[:space:]]*$ would match —
+# and then the sed that shares this pattern would eat the CR and leave one lone LF line
+# in an otherwise CRLF file. Unanchored is the only form that is both found and safe,
+# which is why no other line in install.cmd may begin with these two assignments.
+stamp "$out/install.cmd" '^set "VERSION="' "set \"VERSION=$version\""
+stamp "$out/install.cmd" '^set "SHA256="' "set \"SHA256=$sh_sum\""
 
-(cd "$out" && for f in install.ps1 install.sh statusline.ps1 statusline.sh; do
+(cd "$out" && for f in install.cmd install.ps1 install.sh statusline.ps1 statusline.sh; do
   printf '%s  %s\n' "$(sha256_of "$f")" "$f"
 done >SHA256SUMS)
