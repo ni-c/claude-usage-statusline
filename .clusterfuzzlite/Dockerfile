@@ -4,7 +4,7 @@
 #
 # Digest-pinned like every other dependency here. Dependabot refreshes it: the
 # docker ecosystem watches `/.clusterfuzzlite` and follows the `v1` tag.
-FROM gcr.io/oss-fuzz-base/base-builder-python:v1@sha256:6b2b3a7e4a2da50de47f94925cffbe34747e1aae4f33d7f07ba6c681dd648b23
+FROM gcr.io/oss-fuzz-base/base-builder-python:v1@sha256:140e90791e768fdcbbbd9f7299e5d4d9fc8cfd1ed3c906aa1ca555c9dfe69fa6
 
 # bash to run the script under test, git so the branch segment is fuzzed too
 # rather than skipped. jq is not installed here — the fuzzer runs in a different
