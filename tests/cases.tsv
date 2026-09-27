@@ -4,24 +4,24 @@
 # CLAUDE_STATUSLINE_NOW=1800000000 unless its env column says otherwise.
 # env: "-" or KEY=VALUE pairs separated by ";" — an empty VALUE unsets KEY.
 # expected: {green} {yellow} {red} {reset} stand for the ANSI colour codes.
-full-default	full	-	[Opus 5 (1M context)] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%
-full-colour	full	NO_COLOR=	[Opus 5 (1M context)] 📁 my-repo | {green}ctx 30%{reset} | {green}0h35 30%{reset} | {red}⚠ 1d 89%{reset}
-no-emoji-1	full	CLAUDE_STATUSLINE_NO_EMOJI=1	[Opus 5 (1M context)] my-repo | ctx 30% | 0h35 30% | ! 1d 89%
-no-emoji-true	full	CLAUDE_STATUSLINE_NO_EMOJI=TRUE	[Opus 5 (1M context)] my-repo | ctx 30% | 0h35 30% | ! 1d 89%
-no-emoji-on	full	CLAUDE_STATUSLINE_NO_EMOJI=on	[Opus 5 (1M context)] my-repo | ctx 30% | 0h35 30% | ! 1d 89%
-no-emoji-0	full	CLAUDE_STATUSLINE_NO_EMOJI=0	[Opus 5 (1M context)] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%
-segments-order	full	CLAUDE_STATUSLINE_SEGMENTS=7d,model	⚠ 1d 89% [Opus 5 (1M context)]
+full-default	full	-	[Opus 5] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%
+full-colour	full	NO_COLOR=	[Opus 5] 📁 my-repo | {green}ctx 30%{reset} | {green}0h35 30%{reset} | {red}⚠ 1d 89%{reset}
+no-emoji-1	full	CLAUDE_STATUSLINE_NO_EMOJI=1	[Opus 5] my-repo | ctx 30% | 0h35 30% | ! 1d 89%
+no-emoji-true	full	CLAUDE_STATUSLINE_NO_EMOJI=TRUE	[Opus 5] my-repo | ctx 30% | 0h35 30% | ! 1d 89%
+no-emoji-on	full	CLAUDE_STATUSLINE_NO_EMOJI=on	[Opus 5] my-repo | ctx 30% | 0h35 30% | ! 1d 89%
+no-emoji-0	full	CLAUDE_STATUSLINE_NO_EMOJI=0	[Opus 5] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%
+segments-order	full	CLAUDE_STATUSLINE_SEGMENTS=7d,model	⚠ 1d 89% [Opus 5]
 segments-spaces	full	CLAUDE_STATUSLINE_SEGMENTS= 5h , ctx 	0h35 30% | ctx 30%
-segments-glob	full	CLAUDE_STATUSLINE_SEGMENTS=*,bogus	[Opus 5 (1M context)] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%
-segments-case	full	CLAUDE_STATUSLINE_SEGMENTS=MODEL	[Opus 5 (1M context)] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%
+segments-glob	full	CLAUDE_STATUSLINE_SEGMENTS=*,bogus	[Opus 5] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%
+segments-case	full	CLAUDE_STATUSLINE_SEGMENTS=MODEL	[Opus 5] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%
 segments-duplicate	full	CLAUDE_STATUSLINE_SEGMENTS=ctx,ctx	ctx 30% | ctx 30%
-warn-raised	full	CLAUDE_STATUSLINE_WARN=90	[Opus 5 (1M context)] 📁 my-repo | ctx 30% | 0h35 30% | 1d 89%
-warn-invalid	full	CLAUDE_STATUSLINE_WARN=abc	[Opus 5 (1M context)] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%
-warn-negative	full	CLAUDE_STATUSLINE_WARN=-5	[Opus 5 (1M context)] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%
-warn-too-long	full	CLAUDE_STATUSLINE_WARN=9999999999999	[Opus 5 (1M context)] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%
-warn-zero	full	CLAUDE_STATUSLINE_WARN=0	[Opus 5 (1M context)] 📁 my-repo | ⚠ ctx 30% | ⚠ 0h35 30% | ⚠ 1d 89%
-notice-lowered	full	CLAUDE_STATUSLINE_NOTICE=10;NO_COLOR=	[Opus 5 (1M context)] 📁 my-repo | {yellow}ctx 30%{reset} | {yellow}0h35 30%{reset} | {red}⚠ 1d 89%{reset}
-now-at-5h-reset	full	CLAUDE_STATUSLINE_NOW=1800002100	[Opus 5 (1M context)] 📁 my-repo | ctx 30% | 0h00 30% | ⚠ 1d 89%
+warn-raised	full	CLAUDE_STATUSLINE_WARN=90	[Opus 5] 📁 my-repo | ctx 30% | 0h35 30% | 1d 89%
+warn-invalid	full	CLAUDE_STATUSLINE_WARN=abc	[Opus 5] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%
+warn-negative	full	CLAUDE_STATUSLINE_WARN=-5	[Opus 5] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%
+warn-too-long	full	CLAUDE_STATUSLINE_WARN=9999999999999	[Opus 5] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%
+warn-zero	full	CLAUDE_STATUSLINE_WARN=0	[Opus 5] 📁 my-repo | ⚠ ctx 30% | ⚠ 0h35 30% | ⚠ 1d 89%
+notice-lowered	full	CLAUDE_STATUSLINE_NOTICE=10;NO_COLOR=	[Opus 5] 📁 my-repo | {yellow}ctx 30%{reset} | {yellow}0h35 30%{reset} | {red}⚠ 1d 89%{reset}
+now-at-5h-reset	full	CLAUDE_STATUSLINE_NOW=1800002100	[Opus 5] 📁 my-repo | ctx 30% | 0h00 30% | ⚠ 1d 89%
 api-key-user	api-key-user	-	[Sonnet 5] 📁 app | ctx 12%
 session-start	session-start	-	[Opus 5] 📁 app
 no-model	no-model	-	[?] 📁 app | ctx 5%
@@ -58,3 +58,31 @@ git-detached	git-detached	-	[M] 📁 detached ⎇ 4af7260
 git-no-repo	git-none	-	[M] 📁 plain
 git-no-emoji	git-branch	CLAUDE_STATUSLINE_NO_EMOJI=yes	[M] proj (feature/x)
 git-segment-off	git-branch	CLAUDE_STATUSLINE_SEGMENTS=model,dir	[M] 📁 proj
+effort	effort	-	[Opus 5.5 · xhigh] 📁 app
+effort-short-off-0	effort	CLAUDE_STATUSLINE_SHORT_MODEL=0	[Opus 5.5 (1M context) · xhigh] 📁 app
+effort-short-off-false	effort	CLAUDE_STATUSLINE_SHORT_MODEL=false	[Opus 5.5 (1M context) · xhigh] 📁 app
+effort-short-off-caps	effort	CLAUDE_STATUSLINE_SHORT_MODEL=OFF	[Opus 5.5 (1M context) · xhigh] 📁 app
+effort-short-on	effort	CLAUDE_STATUSLINE_SHORT_MODEL=1	[Opus 5.5 · xhigh] 📁 app
+effort-short-bogus	effort	CLAUDE_STATUSLINE_SHORT_MODEL=bogus	[Opus 5.5 · xhigh] 📁 app
+effort-hidden-0	effort	CLAUDE_STATUSLINE_EFFORT=0	[Opus 5.5] 📁 app
+effort-hidden-no	effort	CLAUDE_STATUSLINE_EFFORT=No	[Opus 5.5] 📁 app
+effort-shown-bogus	effort	CLAUDE_STATUSLINE_EFFORT=bogus	[Opus 5.5 · xhigh] 📁 app
+effort-shown-1	effort	CLAUDE_STATUSLINE_EFFORT=1	[Opus 5.5 · xhigh] 📁 app
+effort-both-off	effort	CLAUDE_STATUSLINE_EFFORT=off;CLAUDE_STATUSLINE_SHORT_MODEL=no	[Opus 5.5 (1M context)] 📁 app
+effort-fast	effort-fast	-	[Opus 5.5 · max · ⚡] 📁 app
+effort-fast-no-emoji	effort-fast	CLAUDE_STATUSLINE_NO_EMOJI=1	[Opus 5.5 · max · fast] app
+effort-fast-effort-off	effort-fast	CLAUDE_STATUSLINE_EFFORT=0	[Opus 5.5 · ⚡] 📁 app
+fast-only	fast-only	-	[Opus 5.5 · ⚡] 📁 app
+effort-escape	effort-escape	-	[Opus 5.5 · hi[2Jgh] 📁 app
+effort-number	effort-number	-	[Opus 5.5] 📁 app
+effort-empty	effort-empty	-	[Opus 5.5] 📁 app
+effort-string	effort-string	-	[Opus 5.5] 📁 app
+effort-null	effort-null	-	[Opus 5.5] 📁 app
+model-paren-only	model-paren-only	-	[(1M context)] 📁 app
+model-paren-mid	model-paren-mid	-	[Opus (beta) 5] 📁 app
+model-two-parens	model-two-parens	-	[Opus 5 (a)] 📁 app
+model-paren-tight	model-paren-tight	-	[Opus 5] 📁 app
+model-paren-trailing	model-paren-trailing	-	[Opus 5 (1M context) ] 📁 app
+model-paren-nested	model-paren-nested	-	[Opus 5 (1M (x))] 📁 app
+full-short-off	full	CLAUDE_STATUSLINE_SHORT_MODEL=0	[Opus 5 (1M context)] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%
+model-id-effort	model-id-only	CLAUDE_STATUSLINE_EFFORT=1	[claude-opus-5] 📁 app

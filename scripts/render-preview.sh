@@ -24,10 +24,11 @@ GIT_AUTHOR_DATE='2026-01-01T00:00:00Z' GIT_COMMITTER_DATE='2026-01-01T00:00:00Z'
 
 # sample CTX FIVE_PCT FIVE_SECONDS_LEFT SEVEN_PCT SEVEN_SECONDS_LEFT → one ANSI line
 sample() {
-  printf '{"model":{"display_name":"Opus 5"},"workspace":{"current_dir":"%s"},"context_window":{"used_percentage":%s},"rate_limits":{"five_hour":{"used_percentage":%s,"resets_at":%s},"seven_day":{"used_percentage":%s,"resets_at":%s}}}' \
+  printf '{"model":{"display_name":"Opus 5.5 (1M context)"},"effort":{"level":"high"},"workspace":{"current_dir":"%s"},"context_window":{"used_percentage":%s},"rate_limits":{"five_hour":{"used_percentage":%s,"resets_at":%s},"seven_day":{"used_percentage":%s,"resets_at":%s}}}' \
     "$work/my-project" "$1" "$2" $((now + $3)) "$4" $((now + $5)) |
     env -u NO_COLOR -u CLAUDE_STATUSLINE_SEGMENTS -u CLAUDE_STATUSLINE_NO_EMOJI \
       -u CLAUDE_STATUSLINE_WARN -u CLAUDE_STATUSLINE_NOTICE \
+      -u CLAUDE_STATUSLINE_SHORT_MODEL -u CLAUDE_STATUSLINE_EFFORT \
       CLAUDE_STATUSLINE_NOW=$now bash "$root/statusline.sh"
 }
 

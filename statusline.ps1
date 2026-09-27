@@ -3,7 +3,7 @@
 # The Windows PowerShell twin of statusline.sh. Reads the JSON Claude Code pipes
 # into a status line command and prints the same line, byte for byte:
 #
-#   [Opus 5] <folder> my-repo <branch> main | ctx 30% | 2h15 42% | <warn> 3d 81%
+#   [Opus 5.5 <dot> high] <folder> my-repo <branch> main | ctx 30% | 2h15 42% | <warn> 3d 81%
 #
 # Runs on Windows PowerShell 5.1 and PowerShell 7, with nothing to install.
 # This file is ASCII on purpose: 5.1 reads a script without a BOM as the ANSI code
@@ -21,6 +21,10 @@ function Get-EnvInt([string]$Name, [int]$Default) {
 
 function Test-True([string]$Value) {
   return $Value -match '^(1|true|yes|on)$'
+}
+
+function Test-False([string]$Value) {
+  return $Value -match '^(0|false|no|off)$'
 }
 
 # Mirrors jq's `clean`: drop C0 and C1 control characters, so an ESC in a
@@ -109,6 +113,9 @@ if ($data -isnot [System.Management.Automation.PSCustomObject]) { $data = $null 
 # jq's `.model.display_name // .model.id // "?"`, and an empty name reads as "?" too.
 $model = Get-Clean (Get-FirstField $data (@(, @('model', 'display_name')) + @(, @('model', 'id'))))
 if ($model -eq '') { $model = '?' }
+# The name without a trailing "(1M context)" or the like, unless that is all it is.
+$modelShort = $model -replace ' *\([^()]*\)$', ''
+if ($modelShort -eq '') { $modelShort = $model }
 $dir = Get-Clean (Get-FirstField $data (@(, @('workspace', 'current_dir')) + @(, @('cwd'))))
 $dirName = Get-BaseName $dir
 $ctxPct = Get-Percent (Get-Field $data @('context_window', 'used_percentage'))
@@ -116,18 +123,27 @@ $fivePct = Get-Percent (Get-Field $data @('rate_limits', 'five_hour', 'used_perc
 $fiveReset = Get-Epoch (Get-Field $data @('rate_limits', 'five_hour', 'resets_at'))
 $sevenPct = Get-Percent (Get-Field $data @('rate_limits', 'seven_day', 'used_percentage'))
 $sevenReset = Get-Epoch (Get-Field $data @('rate_limits', 'seven_day', 'resets_at'))
+$effort = Get-Field $data @('effort', 'level')
+if ($effort -is [string]) { $effort = Get-Clean $effort } else { $effort = '' }
+$fast = Get-Field $data @('fast_mode')
+$fast = $fast -is [bool] -and $fast
 
 $warn = Get-EnvInt 'CLAUDE_STATUSLINE_WARN' 80
 $notice = Get-EnvInt 'CLAUDE_STATUSLINE_NOTICE' 50
 $now = Get-EnvInt 'CLAUDE_STATUSLINE_NOW' ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
 
+# Both on unless switched off, so they read the "false" words rather than the "true" ones.
+if (-not (Test-False $env:CLAUDE_STATUSLINE_SHORT_MODEL)) { $model = $modelShort }
+if (Test-False $env:CLAUDE_STATUSLINE_EFFORT) { $effort = '' }
+
 if (Test-True $env:CLAUDE_STATUSLINE_NO_EMOJI) {
-  $folder = ''; $branchOpen = '('; $branchClose = ')'; $warnMark = '! '
+  $folder = ''; $branchOpen = '('; $branchClose = ')'; $warnMark = '! '; $fastMark = 'fast'
 } else {
   $folder = [char]::ConvertFromUtf32(0x1F4C1) + ' '
   $branchOpen = [string][char]0x2387 + ' '
   $branchClose = ''
   $warnMark = [string][char]0x26A0 + ' '
+  $fastMark = [string][char]0x26A1
 }
 
 # https://no-color.org: present and not empty disables colour.
@@ -165,7 +181,13 @@ function Get-GitBranch {
 
 function Get-Segment([string]$Name) {
   switch ($Name) {
-    'model' { return "[$model]" }
+    'model' {
+      $dot = ' ' + [string][char]0x00B7 + ' '
+      $text = $model
+      if ($effort -ne '') { $text = "$text$dot$effort" }
+      if ($fast) { $text = "$text$dot$fastMark" }
+      return "[$text]"
+    }
     'dir' { if ($dirName -ne '') { return "$folder$dirName" } }
     'git' {
       $branch = Get-GitBranch

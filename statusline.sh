@@ -3,7 +3,7 @@
 #
 # Reads the JSON Claude Code pipes into a status line command and prints one line:
 #
-#   [Opus 5] 📁 my-repo ⎇ main | ctx 30% | 2h15 42% | ⚠ 3d 81%
+#   [Opus 5.5 · high] 📁 my-repo ⎇ main | ctx 30% | 2h15 42% | ⚠ 3d 81%
 #
 # Written for bash 3.2 (the one macOS ships), so no associative arrays and no
 # ${var,,}. Needs jq. A status line must never fail, so there is no `set -e`:
@@ -16,7 +16,9 @@ set -f
 # the lines this prints (minus the CR a native jq.exe adds under Git Bash). Text is stripped of C0/C1 control characters, because a
 # directory name is attacker-controlled and an ESC in it would be a terminal
 # escape sequence. Numbers are validated here so bash arithmetic never sees
-# anything but a plain integer.
+# anything but a plain integer. The second line is the model name without a
+# trailing "(1M context)" or the like, unless that is all the name is. A malformed
+# effort must not take the whole line down with it, hence the type checks.
 read -r -d '' JQ_FILTER <<'JQ'
 def clean: tostring | explode | map(select(. >= 32 and (. < 127 or . > 159))) | implode;
 def num: (if type == "number" then . elif type == "string" then (tonumber? // null) else null end)
@@ -25,14 +27,18 @@ def pct: num | if . == null then "" elif . < 0 then 0 elif . > 100 then 100 else
 def epoch: num | if . == null or . < 0 or . >= 100000000000 then "" else floor end;
 def base: if . == "" then "" else (sub("[/\\\\]+$"; "") | if . == "" then "/" else (split("/") | last | split("\\") | last) end) end;
 (.workspace.current_dir // .cwd // "" | clean) as $dir
-| (.model.display_name // .model.id // "?" | clean),
+| (.model.display_name // .model.id // "?" | clean) as $model
+| $model,
+  ($model | sub(" *\\([^()]*\\)$"; "") | if . == "" then $model else . end),
   $dir,
   ($dir | base),
   (.context_window.used_percentage | pct),
   (.rate_limits.five_hour.used_percentage | pct),
   (.rate_limits.five_hour.resets_at | epoch),
   (.rate_limits.seven_day.used_percentage | pct),
-  (.rate_limits.seven_day.resets_at | epoch)
+  (.rate_limits.seven_day.resets_at | epoch),
+  (.effort | if type == "object" then .level else null end | if type == "string" then clean else "" end),
+  (if .fast_mode == true then "1" else "" end)
 JQ
 
 # Non-negative integer from the environment, or the default. Twelve digits at most,
@@ -51,6 +57,13 @@ is_true() {
   esac
 }
 
+is_false() {
+  case "$1" in
+    0 | [Ff][Aa][Ll][Ss][Ee] | [Nn][Oo] | [Oo][Ff][Ff]) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 if ! command -v jq >/dev/null 2>&1; then
   echo "claude-usage-statusline: jq is required (https://jqlang.org/download/)"
   exit 0
@@ -63,6 +76,7 @@ input=$(tr -d '\000')
 
 {
   IFS= read -r MODEL
+  IFS= read -r MODEL_SHORT
   IFS= read -r DIR
   IFS= read -r DIR_NAME
   IFS= read -r CTX_PCT
@@ -70,6 +84,8 @@ input=$(tr -d '\000')
   IFS= read -r FIVE_RESET
   IFS= read -r SEVEN_PCT
   IFS= read -r SEVEN_RESET
+  IFS= read -r EFFORT
+  IFS= read -r FAST
 } <<EOF
 $(printf '%s' "$input" | jq -r "$JQ_FILTER" 2>/dev/null | tr -d '\r')
 EOF
@@ -78,10 +94,14 @@ WARN=$(env_int "${CLAUDE_STATUSLINE_WARN:-}" 80)
 NOTICE=$(env_int "${CLAUDE_STATUSLINE_NOTICE:-}" 50)
 NOW=$(env_int "${CLAUDE_STATUSLINE_NOW:-}" "$(date +%s)")
 
+# Both on unless switched off, so they read the "false" words rather than the "true" ones.
+is_false "${CLAUDE_STATUSLINE_SHORT_MODEL:-}" || MODEL=$MODEL_SHORT
+is_false "${CLAUDE_STATUSLINE_EFFORT:-}" && EFFORT=''
+
 if is_true "${CLAUDE_STATUSLINE_NO_EMOJI:-}"; then
-  FOLDER='' BRANCH_OPEN='(' BRANCH_CLOSE=')' WARN_MARK='! '
+  FOLDER='' BRANCH_OPEN='(' BRANCH_CLOSE=')' WARN_MARK='! ' FAST_MARK='fast'
 else
-  FOLDER='📁 ' BRANCH_OPEN='⎇ ' BRANCH_CLOSE='' WARN_MARK='⚠ '
+  FOLDER='📁 ' BRANCH_OPEN='⎇ ' BRANCH_CLOSE='' WARN_MARK='⚠ ' FAST_MARK='⚡'
 fi
 
 # https://no-color.org: present and not empty disables colour.
@@ -118,7 +138,12 @@ git_branch() {
 
 segment() {
   case "$1" in
-    model) printf '[%s]' "${MODEL:-?}" ;;
+    model)
+      local text=${MODEL:-?}
+      [ -n "$EFFORT" ] && text="$text · $EFFORT"
+      [ -n "$FAST" ] && text="$text · $FAST_MARK"
+      printf '[%s]' "$text"
+      ;;
     dir) [ -n "$DIR_NAME" ] && printf '%s%s' "$FOLDER" "$DIR_NAME" ;;
     git)
       local branch

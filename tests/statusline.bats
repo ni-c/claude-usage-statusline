@@ -56,6 +56,7 @@ $pair"
   # shellcheck disable=SC2086 # one assignment per line, split on purpose
   out=$(env -u NO_COLOR -u CLAUDE_STATUSLINE_WARN -u CLAUDE_STATUSLINE_NOTICE \
     -u CLAUDE_STATUSLINE_SEGMENTS -u CLAUDE_STATUSLINE_NO_EMOJI -u CLAUDE_STATUSLINE_NOW \
+    -u CLAUDE_STATUSLINE_SHORT_MODEL -u CLAUDE_STATUSLINE_EFFORT \
     $assignments "${STATUSLINE_BASH:-bash}" "$ROOT/statusline.sh" <"$2" 2>"$WORK/stderr"
     echo "code=$?")
   code=${out##*code=}
@@ -129,7 +130,7 @@ path_with() {
   run env PATH="$dir:$PATH" NO_COLOR=1 CLAUDE_STATUSLINE_NOW=1800000000 \
     "${STATUSLINE_BASH:-bash}" "$ROOT/statusline.sh" <"$ROOT/tests/fixtures/full.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "[Opus 5 (1M context)] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%" ]
+  [ "$output" = "[Opus 5] 📁 my-repo | ctx 30% | 0h35 30% | ⚠ 1d 89%" ]
 }
 
 # Found by fuzz/fuzz_statusline.py: a command substitution drops NUL bytes by
