@@ -17,6 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   without effort levels show none. `CLAUDE_STATUSLINE_EFFORT=0` leaves it out.
 - `⚡` in the model segment while fast mode is on (`fast` with
   `CLAUDE_STATUSLINE_NO_EMOJI=1`).
+- An update notice, `↑ 1.2.0 available` in light blue at the end of the line, while a
+  newer release is out. Once a day the status line asks GitHub in the background which
+  release is the latest; it never waits for the answer, and never downloads or installs
+  anything. `CLAUDE_STATUSLINE_UPDATE_CHECK=0`, `DO_NOT_TRACK=1` or
+  `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` turn it off; `update` is a new name for
+  `CLAUDE_STATUSLINE_SEGMENTS`. Release builds now stamp the version into the status
+  line scripts, before their checksums are taken.
+- The README says how to update: run the install command again.
 
 ### Changed
 

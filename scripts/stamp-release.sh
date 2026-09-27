@@ -5,6 +5,7 @@
 #
 # The installers get the version and the SHA-256 of the script they install baked
 # in, so a release installer only ever installs the exact bytes released with it.
+# The status lines get the version too, for their update check.
 # SHA256SUMS covers all five assets for anyone who wants to check by hand.
 set -euo pipefail
 
@@ -22,11 +23,6 @@ sha256_of() {
   else shasum -a 256 "$1" | cut -d' ' -f1; fi
 }
 
-mkdir -p "$out"
-cp "$root/statusline.sh" "$root/statusline.ps1" "$out/"
-sh_sum=$(sha256_of "$out/statusline.sh")
-ps_sum=$(sha256_of "$out/statusline.ps1")
-
 # stamp FILE PATTERN REPLACEMENT — exactly one line must match, or the build fails.
 stamp() {
   local count
@@ -34,6 +30,15 @@ stamp() {
   [ "$count" = 1 ] || { echo "$1: expected one line matching '$2', found $count" >&2; exit 1; }
   sed "s|$2|$3|" "$1" >"$1.tmp" && mv "$1.tmp" "$1"
 }
+
+mkdir -p "$out"
+cp "$root/statusline.sh" "$root/statusline.ps1" "$out/"
+# The status lines learn their own version, for the update check, before their
+# checksums are taken: the installers pin the stamped bytes.
+stamp "$out/statusline.sh" "^STATUSLINE_VERSION=''\$" "STATUSLINE_VERSION='$version'"
+stamp "$out/statusline.ps1" "^\\\$StatuslineVersion = ''\$" "\$StatuslineVersion = '$version'"
+sh_sum=$(sha256_of "$out/statusline.sh")
+ps_sum=$(sha256_of "$out/statusline.ps1")
 
 cp "$root/install.sh" "$root/install.ps1" "$root/install.cmd" "$out/"
 stamp "$out/install.sh" "^VERSION=''\$" "VERSION='$version'"

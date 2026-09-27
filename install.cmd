@@ -296,8 +296,8 @@ exit /b 0
 del "%SETTINGS_TMP%" 2>NUL
 exit /b 0
 
-rem setlocal is cmd's env -u: NO_COLOR and the missing CLAUDE_STATUSLINE_SEGMENTS reach
-rem the child only.
+rem setlocal keeps NO_COLOR and CLAUDE_STATUSLINE_SEGMENTS=model to the child. The model
+rem segment alone needs nothing but jq, and the update check stays quiet.
 rem
 rem The expectation is written by the same shell that writes the output, and the two are
 rem then compared as bytes, so `test "$probe" = "[ok]"` means here exactly what it means
@@ -307,7 +307,7 @@ rem a correct [ok] wrong.
 :probe
 setlocal
 set "NO_COLOR=1"
-set "CLAUDE_STATUSLINE_SEGMENTS="
+set "CLAUDE_STATUSLINE_SEGMENTS=model"
 jq -nc --arg n ok "{model:{display_name:$n}}" | "%GIT_BASH%" "%TARGET_FWD%" >"%WORK%\probe.txt" 2>&1
 "%GIT_BASH%" -c "printf '[ok]\n'" >"%WORK%\expect.txt" 2>NUL
 fc /b "%WORK%\probe.txt" "%WORK%\expect.txt" >NUL 2>&1 || exit /b 1

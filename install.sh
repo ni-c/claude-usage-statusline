@@ -201,9 +201,10 @@ new_settings=$(printf '%s' "$settings" | jq --arg cmd "$command" --arg marker "$
   | .statusLine.refreshInterval //= 30')
 write_settings "$new_settings"
 
-# Proves the installed line runs here, with this jq, before claiming success.
+# Proves the installed line runs here, with this jq, before claiming success. The
+# model segment alone: it needs nothing but jq, and the update check stays quiet.
 probe=$(printf '{"model":{"display_name":"ok"}}' |
-  env -u CLAUDE_STATUSLINE_SEGMENTS NO_COLOR=1 bash "$TARGET" 2>&1) || true
+  env CLAUDE_STATUSLINE_SEGMENTS=model NO_COLOR=1 bash "$TARGET" 2>&1) || true
 [ "$probe" = '[ok]' ] || die "installed, but a test run printed: $probe"
 
 info "Installed $NAME${VERSION:+ $VERSION} to $TARGET"

@@ -48,7 +48,7 @@ TIMEOUT_SECONDS = 10
 _FORBIDDEN = re.compile(rb"[\x00-\x09\x0b-\x1f\x7f]")
 
 # The knobs the README documents. NO_COLOR is not among them on purpose.
-_SEGMENT_NAMES = ["model", "dir", "git", "ctx", "5h", "7d"]
+_SEGMENT_NAMES = ["model", "dir", "git", "ctx", "5h", "7d", "update"]
 
 
 class OracleError(AssertionError):
