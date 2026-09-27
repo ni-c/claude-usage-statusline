@@ -86,6 +86,8 @@ Describe 'install.ps1' {
     $psi.RedirectStandardOutput = $true
     $psi.StandardOutputEncoding = New-Object System.Text.UTF8Encoding($false)
     $psi.EnvironmentVariables['NO_COLOR'] = '1'
+    # The release is stamped, so its update check would go to the network: not from here.
+    $psi.EnvironmentVariables['CLAUDE_STATUSLINE_UPDATE_CHECK'] = '0'
     $process = [Diagnostics.Process]::Start($psi)
     $process.StandardInput.Write('{"model":{"display_name":"Opus 5"},"context_window":{"used_percentage":12}}')
     $process.StandardInput.Close()

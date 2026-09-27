@@ -86,7 +86,7 @@ jobs:
             sudo apt-get update -qq && sudo apt-get install -y -qq bats jq
           fi
       - run: ${{ matrix.bash }} --version | head -1
-      - run: bats tests/
+      - run: bats --print-output-on-failure tests/
         env:
           STATUSLINE_BASH: ${{ matrix.bash }}
 
@@ -140,4 +140,4 @@ jobs:
       # --print-output-on-failure: without it a failing install.cmd case shows only the
       # assertion that tripped, and the one thing worth seeing — what cmd.exe, jq or the
       # installer actually printed — is dropped.
-      - run: '"$RUNNER_TEMP/bats/bin/bats" --print-output-on-failure tests/statusline.bats tests/install-cmd.bats'
+      - run: '"$RUNNER_TEMP/bats/bin/bats" --print-output-on-failure tests/statusline.bats tests/update.bats tests/install-cmd.bats'

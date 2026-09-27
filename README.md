@@ -28,14 +28,15 @@ macOS and Windows.
      two lines, because a table cannot be told not to wrap: GitHub strips
      style attributes and <nobr> alike. -->
 
-| Segment             | Name    | Meaning                                                                                                                  |
-| ------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `[Opus 5.5 · high]` | `model` | The model answering in this session, under the name Claude Code gives it — or its bare model id if it sends no name at all. A trailing note such as `(1M context)` is left off. After the name: the reasoning effort as `/effort` last set it, and `⚡` while fast mode is on. A model without effort levels shows none. |
-| `📁 my‑project`      | `dir`   | The last segment of the directory Claude Code is working in, so that a deep path still costs one short word.               |
-| `⎇ main`            | `git`   | The branch checked out in that directory, or the short commit hash on a detached HEAD. Outside a repository: nothing.      |
-| `ctx 57%`           | `ctx`   | How full the context window is. Claude Code sends the percentage; the status line only decides what colour it gets.        |
-| `1h05 64%`          | `5h`    | The five-hour limit: 64 % of it used, and 1 hour 5 minutes left until it resets.                                           |
-| `3d 41%`            | `7d`    | The weekly limit: 41 % of it used, and at most 3 days until it resets — whole days, rounded up, so `1d` means today.       |
+| Segment             | Name     | Meaning                                                                                                                                                                                                                                                                                                                 |
+| ------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `[Opus 5.5 · high]` | `model`  | The model answering in this session, under the name Claude Code gives it — or its bare model id if it sends no name at all. A trailing note such as `(1M context)` is left off. After the name: the reasoning effort as `/effort` last set it, and `⚡` while fast mode is on. A model without effort levels shows none. |
+| `📁 my‑project`      | `dir`    | The last segment of the directory Claude Code is working in, so that a deep path still costs one short word.                                                                                                                                                                                                            |
+| `⎇ main`            | `git`    | The branch checked out in that directory, or the short commit hash on a detached HEAD. Outside a repository: nothing.                                                                                                                                                                                                   |
+| `ctx 57%`           | `ctx`    | How full the context window is. Claude Code sends the percentage; the status line only decides what colour it gets.                                                                                                                                                                                                     |
+| `1h05 64%`          | `5h`     | The five-hour limit: 64 % of it used, and 1 hour 5 minutes left until it resets.                                                                                                                                                                                                                                        |
+| `3d 41%`            | `7d`     | The weekly limit: 41 % of it used, and at most 3 days until it resets — whole days, rounded up, so `1d` means today.                                                                                                                                                                                                    |
+| `↑ 1.2.0 available` | `update` | A newer release is out, see [Update check](#update-check). Otherwise nothing.                                                                                                                                                                                                                                           |
 
 The names in the middle column are the ones `CLAUDE_STATUSLINE_SEGMENTS` takes, in
 [Configuration](#configuration) below.
@@ -47,7 +48,7 @@ the first answer of a session. Claude Code does not send them to people who use 
 key. Segments without data are left out, so the line never shows stale or made-up
 numbers.
 
-## Install
+## Install and update
 
 **Linux, macOS, WSL**
 
@@ -83,6 +84,8 @@ it through Git Bash, so neither the installer nor the status line ever runs
 to install and every time the status line runs; `curl.exe` and `certutil` come with
 Windows 10 1803 and newer. **If PowerShell works on your machine, `install.ps1` above is
 the simpler choice — it needs nothing.**
+
+**To update**, run the same command again.
 
 The installer comes with a release. It downloads the status line script from that same
 release and checks it against a SHA-256 checksum written into the installer —
@@ -196,18 +199,40 @@ platform:
 }
 ```
 
-| Variable                        | Default                   | Effect                                                                        |
-| ------------------------------- | ------------------------- | ----------------------------------------------------------------------------- |
-| `CLAUDE_STATUSLINE_SEGMENTS`    | `model,dir,git,ctx,5h,7d` | Which segments to show, in this order. Unknown names are ignored.             |
-| `CLAUDE_STATUSLINE_WARN`        | `80`                      | From this percentage on: red with `⚠`.                                        |
-| `CLAUDE_STATUSLINE_NOTICE`      | `50`                      | From this percentage on: yellow.                                              |
-| `CLAUDE_STATUSLINE_EFFORT`      | on                        | `0` leaves the reasoning effort out of the model segment.                     |
-| `CLAUDE_STATUSLINE_SHORT_MODEL` | on                        | `0` keeps a trailing note such as `(1M context)` in the model name.           |
-| `CLAUDE_STATUSLINE_NO_EMOJI`    | unset                     | `1` replaces `📁`, `⎇`, `⚠` and `⚡` with plain text, for fonts without them. |
-| `NO_COLOR`                      | unset                     | Any value turns colours off ([no-color.org](https://no-color.org)).           |
+| Variable                         | Default                          | Effect                                                                                   |
+| -------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------- |
+| `CLAUDE_STATUSLINE_SEGMENTS`     | `model,dir,git,ctx,5h,7d,update` | Which segments to show, in this order. Unknown names are ignored.                        |
+| `CLAUDE_STATUSLINE_WARN`         | `80`                             | From this percentage on: red with `⚠`.                                                   |
+| `CLAUDE_STATUSLINE_NOTICE`       | `50`                             | From this percentage on: yellow.                                                         |
+| `CLAUDE_STATUSLINE_EFFORT`       | on                               | `0` leaves the reasoning effort out of the model segment.                                |
+| `CLAUDE_STATUSLINE_SHORT_MODEL`  | on                               | `0` keeps a trailing note such as `(1M context)` in the model name.                      |
+| `CLAUDE_STATUSLINE_UPDATE_CHECK` | on                               | `0` turns the [update check](#update-check) off; `1` keeps it on despite `DO_NOT_TRACK`. |
+| `CLAUDE_STATUSLINE_NO_EMOJI`     | unset                            | `1` replaces `📁`, `⎇`, `⚠`, `⚡` and `↑` with plain text, for fonts without them.         |
+| `NO_COLOR`                       | unset                            | Any value turns colours off ([no-color.org](https://no-color.org)).                      |
 
 `1`, `true`, `yes` and `on` switch a setting on; `0`, `false`, `no` and `off` switch it
 off, in any case.
+
+## Update check
+
+Once a day the status line asks GitHub which release is the latest, and shows
+`↑ 1.2.0 available` at the end of the line while yours is older. The status line
+never waits for the answer: it reads the result of the last check from a file,
+`~/.cache/claude-usage-statusline/latest` (`%LOCALAPPDATA%\claude-usage-statusline\latest`
+on Windows), and starts the next check in the background.
+
+- **What is sent:** one HTTPS request to
+  `https://github.com/ni-c/claude-usage-statusline/releases/latest`, whose redirect
+  names the latest tag. Nothing about you or your session goes with it; GitHub sees
+  your IP address, as with any download.
+- **What comes back** is checked to be a plain `x.y.z` version before it is stored or
+  shown. Nothing is downloaded or installed: updating stays your decision, by running
+  the install command again.
+- **Off:** `CLAUDE_STATUSLINE_UPDATE_CHECK=0`, a `CLAUDE_STATUSLINE_SEGMENTS` without
+  `update`, `DO_NOT_TRACK=1`, or Claude Code's `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`.
+  `CLAUDE_STATUSLINE_UPDATE_CHECK=1` turns it back on over the last two.
+- A copy of the script taken from the repository rather than from a release knows no
+  version and never checks.
 
 ## Uninstall
 
@@ -251,10 +276,11 @@ installed it.
 
 Claude Code pipes a JSON document into the status line command
 ([documentation](https://code.claude.com/docs/en/statusline)). This status line reads
-`model.display_name`, `workspace.current_dir`, `context_window.used_percentage` and
-`rate_limits.five_hour` / `rate_limits.seven_day` from it and prints one line. It reads
-no files and writes none, and it sends nothing anywhere. The only thing it runs is
-`git`, to read the branch name.
+`model.display_name`, `effort.level`, `fast_mode`, `workspace.current_dir`,
+`context_window.used_percentage` and `rate_limits.five_hour` / `rate_limits.seven_day`
+from it and prints one line. It runs `git`, to read the branch name, and — once a day,
+in the background — `curl` for the [update check](#update-check), whose one small file
+is all it reads or writes.
 
 There are two implementations that print exactly the same bytes: `statusline.sh`
 (bash 3.2 or newer, with jq) and `statusline.ps1` (Windows PowerShell 5.1 or

@@ -12,6 +12,11 @@
 # Word splitting of the segment list must never turn a "*" into file names.
 set -f
 
+# The release this copy belongs to, stamped by scripts/stamp-release.sh. A copy taken
+# from a checkout has none and never looks for updates.
+STATUSLINE_VERSION=''
+REPO_URL='https://github.com/ni-c/claude-usage-statusline'
+
 # The one place that decides which JSON fields are read. Everything below works on
 # the lines this prints (minus the CR a native jq.exe adds under Git Bash). Text is stripped of C0/C1 control characters, because a
 # directory name is attacker-controlled and an ESC in it would be a terminal
@@ -99,16 +104,16 @@ is_false "${CLAUDE_STATUSLINE_SHORT_MODEL:-}" || MODEL=$MODEL_SHORT
 is_false "${CLAUDE_STATUSLINE_EFFORT:-}" && EFFORT=''
 
 if is_true "${CLAUDE_STATUSLINE_NO_EMOJI:-}"; then
-  FOLDER='' BRANCH_OPEN='(' BRANCH_CLOSE=')' WARN_MARK='! ' FAST_MARK='fast'
+  FOLDER='' BRANCH_OPEN='(' BRANCH_CLOSE=')' WARN_MARK='! ' FAST_MARK='fast' UP_MARK=''
 else
-  FOLDER='📁 ' BRANCH_OPEN='⎇ ' BRANCH_CLOSE='' WARN_MARK='⚠ ' FAST_MARK='⚡'
+  FOLDER='📁 ' BRANCH_OPEN='⎇ ' BRANCH_CLOSE='' WARN_MARK='⚠ ' FAST_MARK='⚡' UP_MARK='↑ '
 fi
 
 # https://no-color.org: present and not empty disables colour.
 if [ -n "${NO_COLOR:-}" ]; then
-  GREEN='' YELLOW='' RED='' RESET=''
+  GREEN='' YELLOW='' RED='' BLUE='' RESET=''
 else
-  GREEN=$'\033[32m' YELLOW=$'\033[33m' RED=$'\033[31m' RESET=$'\033[0m'
+  GREEN=$'\033[32m' YELLOW=$'\033[33m' RED=$'\033[31m' BLUE=$'\033[94m' RESET=$'\033[0m'
 fi
 
 # metric LABEL PERCENT → "LABEL 42%", coloured, with a warning mark at the threshold.
@@ -134,6 +139,112 @@ git_branch() {
   # GIT_OPTIONAL_LOCKS=0: never take index.lock away from a git the user is running.
   GIT_OPTIONAL_LOCKS=0 git -C "$DIR" symbolic-ref --short -q HEAD 2>/dev/null ||
     GIT_OPTIONAL_LOCKS=0 git -C "$DIR" rev-parse --short HEAD 2>/dev/null
+}
+
+# A release version: three parts of one to four digits. Whatever comes from the cache
+# file or from the network passes through here before it is used anywhere.
+is_version() {
+  case "$1" in
+    '' | *[!0-9.]* | .* | *. | *..*) return 1 ;;
+  esac
+  local IFS=. part count=0
+  for part in $1; do
+    case "$part" in ?????*) return 1 ;; esac
+    count=$((count + 1))
+  done
+  [ "$count" -eq 3 ]
+}
+
+# version_newer A B → true when release A is later than release B. 10#: "08" is not octal.
+version_newer() {
+  local IFS=.
+  # shellcheck disable=SC2086 # split on the dots, on purpose
+  set -- $1 $2
+  [ $((10#$1 * 100000000 + 10#$2 * 10000 + 10#$3)) -gt $((10#$4 * 100000000 + 10#$5 * 10000 + 10#$6)) ]
+}
+
+# On by default. DO_NOT_TRACK and Claude Code's own switch for non-essential traffic
+# turn it off too, unless CLAUDE_STATUSLINE_UPDATE_CHECK asks for it by name.
+update_check_allowed() {
+  is_version "$STATUSLINE_VERSION" || return 1
+  is_false "${CLAUDE_STATUSLINE_UPDATE_CHECK:-}" && return 1
+  is_true "${CLAUDE_STATUSLINE_UPDATE_CHECK:-}" && return 0
+  case "${DO_NOT_TRACK:-}" in '' | 0) ;; *) return 1 ;; esac
+  [ -z "${CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC:-}" ]
+}
+
+# XDG_CACHE_HOME counts only as an absolute path, as the XDG spec says.
+cache_dir() {
+  if [ -n "${CLAUDE_STATUSLINE_CACHE_DIR:-}" ]; then
+    printf '%s' "$CLAUDE_STATUSLINE_CACHE_DIR"
+    return
+  fi
+  case "${XDG_CACHE_HOME:-}" in
+    /*) printf '%s/claude-usage-statusline' "$XDG_CACHE_HOME" ;;
+    *) [ -n "${HOME:-}" ] && printf '%s/.cache/claude-usage-statusline' "$HOME" ;;
+  esac
+}
+
+# write_cache DIR VERSION → "<now> <version>" into DIR/latest, whole or not at all.
+# mv would put the file inside a directory of that name, or follow nothing but still
+# replace a symlink the check refuses to read: neither is ours to touch.
+write_cache() {
+  local tmp="$1/latest.$$.tmp"
+  { [ -L "$1/latest" ] || [ -d "$1/latest" ]; } && return 1
+  if (umask 077 && printf '%s %s\n' "$NOW" "$2" >"$tmp") 2>/dev/null && mv -f "$tmp" "$1/latest" 2>/dev/null; then
+    return 0
+  fi
+  rm -f "$tmp" 2>/dev/null
+  return 1
+}
+
+# Claims the next check before it starts, so the renders of the next seconds do not
+# each start one, then asks GitHub in the background: the status line never waits
+# for the network. Only the redirect of /releases/latest is read, so there is no
+# API, no JSON and no rate limit, and anything but the expected tag URL is dropped.
+start_update_check() {
+  command -v curl >/dev/null 2>&1 || return 0
+  # Private where the file system can say so. Not mkdir -m: under Git Bash it can
+  # fail where a plain mkdir works, and a chmod that fails costs nothing.
+  mkdir -p "$1" 2>/dev/null || return 0
+  chmod 700 "$1" 2>/dev/null
+  write_cache "$1" "$2" || return 0
+  (
+    url=$(curl -fsS --proto '=https' --max-time 5 -o /dev/null -w '%{redirect_url}' \
+      "$REPO_URL/releases/latest" 2>/dev/null) || exit 0
+    case "$url" in "$REPO_URL/releases/tag/v"*) ;; *) exit 0 ;; esac
+    tag=${url#"$REPO_URL/releases/tag/v"}
+    is_version "$tag" && write_cache "$1" "$tag"
+  ) </dev/null >/dev/null 2>&1 &
+}
+
+# Prints the latest release when it is newer than this copy. Reads only the cache;
+# a check older than a day (or dated in the future) starts the next one.
+update_notice() {
+  update_check_allowed || return 0
+  local dir file line='' checked latest
+  dir=$(cache_dir)
+  [ -n "$dir" ] || return 0
+  file="$dir/latest"
+  # A symlink or anything but a plain file is not ours: never read through it,
+  # never replace it.
+  [ -L "$file" ] && return 0
+  if [ -e "$file" ]; then
+    [ -f "$file" ] || return 0
+    # Every byte but digits, dots and spaces becomes a "?", which no check lets
+    # through: a NUL would make bash warn on stderr, a CR vanishes in Git Bash's
+    # command substitutions, and invalid UTF-8 makes BSD tr and bash 3.2's pattern
+    # matching stumble. Byte-wise, the result is the same on every platform.
+    line=$(head -c 64 "$file" 2>/dev/null | LC_ALL=C tr -c '0-9. \n' '?' 2>/dev/null | head -n 1)
+  fi
+  checked=${line%% *} latest=${line#* }
+  case "$checked" in '' | *[!0-9]* | ?????????????*) checked='' ;; esac
+  is_version "$latest" || latest=''
+  if [ -z "$checked" ] || [ "$checked" -gt "$NOW" ] || [ $((NOW - checked)) -ge 86400 ]; then
+    start_update_check "$dir" "$latest"
+  fi
+  [ -n "$latest" ] && version_newer "$latest" "$STATUSLINE_VERSION" &&
+    printf '%s%s%s available%s' "$BLUE" "$UP_MARK" "$latest" "$RESET"
 }
 
 segment() {
@@ -172,6 +283,7 @@ segment() {
       fi
       metric "$label" "$SEVEN_PCT"
       ;;
+    update) update_notice ;;
   esac
 }
 
@@ -180,17 +292,17 @@ segment() {
 SEGMENTS=''
 for name in $(printf '%s' "${CLAUDE_STATUSLINE_SEGMENTS:-}" | tr ',' ' '); do
   case "$name" in
-    model | dir | git | ctx | 5h | 7d) SEGMENTS="$SEGMENTS $name" ;;
+    model | dir | git | ctx | 5h | 7d | update) SEGMENTS="$SEGMENTS $name" ;;
   esac
 done
-[ -n "$SEGMENTS" ] || SEGMENTS='model dir git ctx 5h 7d'
+[ -n "$SEGMENTS" ] || SEGMENTS='model dir git ctx 5h 7d update'
 
 LINE=''
 for name in $SEGMENTS; do
   text=$(segment "$name")
   [ -n "$text" ] || continue
   case "$name" in
-    ctx | 5h | 7d) sep=' | ' ;;
+    ctx | 5h | 7d | update) sep=' | ' ;;
     *) sep=' ' ;;
   esac
   if [ -n "$LINE" ]; then LINE="$LINE$sep$text"; else LINE=$text; fi

@@ -14,9 +14,8 @@ Only the latest release and the current `main` branch receive security fixes.
 
 ## What the status line does
 
-It reads the JSON Claude Code writes to its standard input and prints one line. It
-reads no files, writes none, opens no network connection and keeps no state between
-runs.
+It reads the JSON Claude Code writes to its standard input and prints one line. The one
+state it keeps is the result of its daily update check, below.
 
 Text from that JSON reaches your terminal, and part of it is not under your control:
 a directory name can contain anything a file system allows, including an escape
@@ -29,6 +28,24 @@ current branch: `git symbolic-ref --short -q HEAD`, and `git rev-parse --short H
 on a detached HEAD. Neither reads the index or the working tree, so neither runs
 `core.fsmonitor`, hooks or filters from the repository's configuration.
 `GIT_OPTIONAL_LOCKS=0` keeps it from taking a lock away from a git you are running.
+
+The update check is the one network connection, and it only notifies:
+
+- Once a day, in the background, one HTTPS request without credentials goes to
+  `https://github.com/ni-c/claude-usage-statusline/releases/latest` — `curl` from
+  `statusline.sh`, a hidden PowerShell from `statusline.ps1`. Only the redirect is read,
+  and only a `…/releases/tag/vX.Y.Z` URL on that repository is accepted; anything else
+  is dropped. The status line never waits for it, and never downloads or runs code: an
+  update is always the installer, run by you.
+- The result is one line, `<time> <version>`, in
+  `~/.cache/claude-usage-statusline/latest` (or `$XDG_CACHE_HOME`, or
+  `%LOCALAPPDATA%` on Windows), in a directory created for the user alone. It is
+  validated again every time it is read: a timestamp of at most twelve digits and a
+  version of three parts of at most four digits each, or it counts as missing. A symlink
+  or directory in its place is neither read nor replaced.
+- `CLAUDE_STATUSLINE_UPDATE_CHECK=0`, `DO_NOT_TRACK=1` and
+  `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` turn it off; a copy of the script that was
+  not built by a release has no version and never checks.
 
 ## What the installers do
 

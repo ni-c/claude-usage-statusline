@@ -13,6 +13,10 @@
 $ErrorActionPreference = 'Continue'
 Set-StrictMode -Off
 
+# The release this copy belongs to, stamped by scripts/stamp-release.sh. A copy taken
+# from a checkout has none and never looks for updates.
+$StatuslineVersion = ''
+
 function Get-EnvInt([string]$Name, [int]$Default) {
   $value = [Environment]::GetEnvironmentVariable($Name)
   if ($value -match '^[0-9]+$' -and $value.Length -le 12) { return [long]$value }
@@ -137,21 +141,22 @@ if (-not (Test-False $env:CLAUDE_STATUSLINE_SHORT_MODEL)) { $model = $modelShort
 if (Test-False $env:CLAUDE_STATUSLINE_EFFORT) { $effort = '' }
 
 if (Test-True $env:CLAUDE_STATUSLINE_NO_EMOJI) {
-  $folder = ''; $branchOpen = '('; $branchClose = ')'; $warnMark = '! '; $fastMark = 'fast'
+  $folder = ''; $branchOpen = '('; $branchClose = ')'; $warnMark = '! '; $fastMark = 'fast'; $upMark = ''
 } else {
   $folder = [char]::ConvertFromUtf32(0x1F4C1) + ' '
   $branchOpen = [string][char]0x2387 + ' '
   $branchClose = ''
   $warnMark = [string][char]0x26A0 + ' '
   $fastMark = [string][char]0x26A1
+  $upMark = [string][char]0x2191 + ' '
 }
 
 # https://no-color.org: present and not empty disables colour.
 if ($env:NO_COLOR) {
-  $green = ''; $yellow = ''; $red = ''; $reset = ''
+  $green = ''; $yellow = ''; $red = ''; $blue = ''; $reset = ''
 } else {
   $esc = [string][char]27
-  $green = "$esc[32m"; $yellow = "$esc[33m"; $red = "$esc[31m"; $reset = "$esc[0m"
+  $green = "$esc[32m"; $yellow = "$esc[33m"; $red = "$esc[31m"; $blue = "$esc[94m"; $reset = "$esc[0m"
 }
 
 function Format-Metric([string]$Label, [long]$Percent) {
@@ -177,6 +182,131 @@ function Get-GitBranch {
     if ($LASTEXITCODE -ne 0) { return '' }
   }
   return Get-Clean (($branch | Select-Object -First 1))
+}
+
+# A release version: three parts of one to four digits. Whatever comes from the cache
+# file or from the network passes through here before it is used anywhere. \z, not $:
+# .NET's $ also matches before a final newline.
+function Test-Version([string]$Value) {
+  return $Value -cmatch '^[0-9]{1,4}\.[0-9]{1,4}\.[0-9]{1,4}\z'
+}
+
+function Get-VersionKey([string]$Value) {
+  $parts = $Value.Split('.')
+  return [long]$parts[0] * 100000000 + [long]$parts[1] * 10000 + [long]$parts[2]
+}
+
+# On by default. DO_NOT_TRACK and Claude Code's own switch for non-essential traffic
+# turn it off too, unless CLAUDE_STATUSLINE_UPDATE_CHECK asks for it by name.
+function Test-UpdateCheck {
+  if (-not (Test-Version $StatuslineVersion)) { return $false }
+  if (Test-False $env:CLAUDE_STATUSLINE_UPDATE_CHECK) { return $false }
+  if (Test-True $env:CLAUDE_STATUSLINE_UPDATE_CHECK) { return $true }
+  if ($env:DO_NOT_TRACK -and $env:DO_NOT_TRACK -ne '0') { return $false }
+  return -not $env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC
+}
+
+function Get-CacheDir {
+  if ($env:CLAUDE_STATUSLINE_CACHE_DIR) { return $env:CLAUDE_STATUSLINE_CACHE_DIR }
+  if ($env:LOCALAPPDATA) { return Join-Path $env:LOCALAPPDATA 'claude-usage-statusline' }
+  return ''
+}
+
+# "<now> <version>" into Dir\latest, whole or not at all.
+# Move-Item would put the file inside a directory of that name: neither that nor a
+# symlink is ours to touch.
+function Write-UpdateCache([string]$Dir, [string]$Latest) {
+  $target = Get-Item -LiteralPath (Join-Path $Dir 'latest') -Force -ErrorAction SilentlyContinue
+  if ($null -ne $target -and ($target.PSIsContainer -or ($target.Attributes -band [IO.FileAttributes]::ReparsePoint))) {
+    return $false
+  }
+  $tmp = Join-Path $Dir "latest.$PID.tmp"
+  try {
+    [IO.File]::WriteAllText($tmp, "$now $Latest`n", $utf8)
+    Move-Item -LiteralPath $tmp -Destination (Join-Path $Dir 'latest') -Force -ErrorAction Stop
+    return $true
+  } catch {
+    Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+    return $false
+  }
+}
+
+# The background half of the update check: a hidden PowerShell of its own, so the
+# status line never waits for the network. It reads only the redirect of
+# /releases/latest and drops anything but the expected tag URL. Directory and time
+# travel in the environment rather than in the code.
+$updateFetch = @'
+try {
+  $repo = 'https://github.com/ni-c/claude-usage-statusline'
+  [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+  $request = [Net.HttpWebRequest]::Create("$repo/releases/latest")
+  $request.AllowAutoRedirect = $false
+  $request.Timeout = 5000
+  $request.UserAgent = 'claude-usage-statusline'
+  $response = $request.GetResponse()
+  $location = $response.Headers['Location']
+  $response.Close()
+  if ($location -cmatch ('^' + [regex]::Escape("$repo/releases/tag/v") + '([0-9]{1,4}\.[0-9]{1,4}\.[0-9]{1,4})\z')) {
+    $dir = $env:CLAUDE_STATUSLINE_FETCH_DIR
+    $target = Get-Item -LiteralPath (Join-Path $dir 'latest') -Force -ErrorAction SilentlyContinue
+    if ($null -ne $target -and ($target.PSIsContainer -or ($target.Attributes -band [IO.FileAttributes]::ReparsePoint))) { return }
+    $tmp = Join-Path $dir "latest.$PID.tmp"
+    [IO.File]::WriteAllText($tmp, $env:CLAUDE_STATUSLINE_FETCH_NOW + ' ' + $Matches[1] + "`n")
+    Move-Item -LiteralPath $tmp -Destination (Join-Path $dir 'latest') -Force
+  }
+} catch {}
+'@
+
+# Claims the next check before it starts, so the renders of the next seconds do not
+# each start one.
+function Start-UpdateCheck([string]$Dir, [string]$Latest) {
+  try { New-Item -ItemType Directory -Force -Path $Dir -ErrorAction Stop | Out-Null } catch { return }
+  if (-not (Write-UpdateCache $Dir $Latest)) { return }
+  $env:CLAUDE_STATUSLINE_FETCH_DIR = $Dir
+  $env:CLAUDE_STATUSLINE_FETCH_NOW = [string]$now
+  $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($updateFetch))
+  try {
+    Start-Process -FilePath (Get-Process -Id $PID).Path -WindowStyle Hidden -ErrorAction Stop `
+      -ArgumentList '-NoProfile', '-NonInteractive', '-EncodedCommand', $encoded | Out-Null
+  } catch {
+    return
+  }
+}
+
+# The latest release when it is newer than this copy. Reads only the cache; a check
+# older than a day (or dated in the future) starts the next one.
+function Get-UpdateNotice {
+  if (-not (Test-UpdateCheck)) { return '' }
+  $dir = Get-CacheDir
+  if ($dir -eq '') { return '' }
+  $file = Join-Path $dir 'latest'
+  $line = ''
+  $item = Get-Item -LiteralPath $file -Force -ErrorAction SilentlyContinue
+  if ($null -ne $item) {
+    # A symlink, a junction or anything but a plain file is not ours: never read
+    # through it, never replace it.
+    if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { return '' }
+    if ($item.PSIsContainer) { return '' }
+    try {
+      $stream = [IO.File]::OpenRead($file)
+      try {
+        $buffer = New-Object byte[] 64
+        $count = $stream.Read($buffer, 0, 64)
+      } finally { $stream.Dispose() }
+      $line = ($utf8.GetString($buffer, 0, $count) -split "`n")[0]
+    } catch { $line = '' }
+  }
+  # statusline.sh's ${line%% *} and ${line#* }: without a space, both are the line.
+  $space = $line.IndexOf(' ')
+  if ($space -lt 0) { $checked = $line; $latest = $line }
+  else { $checked = $line.Substring(0, $space); $latest = $line.Substring($space + 1) }
+  if ($checked -notmatch '^[0-9]{1,12}\z') { $checked = '' }
+  if (-not (Test-Version $latest)) { $latest = '' }
+  if ($checked -eq '' -or [long]$checked -gt $now -or $now - [long]$checked -ge 86400) {
+    Start-UpdateCheck $dir $latest
+  }
+  if ($latest -ne '' -and (Get-VersionKey $latest) -gt (Get-VersionKey $StatuslineVersion)) { return $latest }
+  return ''
 }
 
 function Get-Segment([string]$Name) {
@@ -213,13 +343,17 @@ function Get-Segment([string]$Name) {
       }
       return Format-Metric $label $sevenPct
     }
+    'update' {
+      $latest = Get-UpdateNotice
+      if ($latest -ne '') { return "$blue$upMark$latest available$reset" }
+    }
   }
   return ''
 }
 
 # Keep the known names in the order given. A list with none of them falls back to
 # the default rather than to an empty line.
-$known = @('model', 'dir', 'git', 'ctx', '5h', '7d')
+$known = @('model', 'dir', 'git', 'ctx', '5h', '7d', 'update')
 $segments = @()
 if ($env:CLAUDE_STATUSLINE_SEGMENTS) {
   $segments = @($env:CLAUDE_STATUSLINE_SEGMENTS -split '[, ]+' | Where-Object { $known -ccontains $_ })
@@ -230,7 +364,7 @@ $line = ''
 foreach ($name in $segments) {
   $text = Get-Segment $name
   if (-not $text) { continue }
-  if ($name -eq 'ctx' -or $name -eq '5h' -or $name -eq '7d') { $sep = ' | ' } else { $sep = ' ' }
+  if ($name -eq 'ctx' -or $name -eq '5h' -or $name -eq '7d' -or $name -eq 'update') { $sep = ' | ' } else { $sep = ' ' }
   if ($line -ne '') { $line = "$line$sep$text" } else { $line = $text }
 }
 

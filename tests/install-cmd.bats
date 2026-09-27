@@ -50,8 +50,9 @@ settings_command() {
 }
 
 # Runs the configured command the way Claude Code does: through a shell, JSON on stdin.
+# The release is stamped, so its update check would go to the network: not from here.
 run_configured() {
-  run sh -c "$(settings_command)" <<<"$1"
+  CLAUDE_STATUSLINE_UPDATE_CHECK=0 run sh -c "$(settings_command)" <<<"$1"
 }
 
 @test "installs into an empty config directory" {

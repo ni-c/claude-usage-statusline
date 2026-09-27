@@ -227,7 +227,8 @@ function Install-ClaudeUsageStatusline {
   Set-StatusLine $doc $newCommand $ours
   Write-Settings (ConvertTo-SettingsText $doc)
 
-  # Proves the installed line runs here before claiming success.
+  # Proves the installed line runs here before claiming success. The model segment
+  # alone: it needs nothing else, and the update check stays quiet.
   $psi = New-Object System.Diagnostics.ProcessStartInfo
   $psi.FileName = (Get-Command $shell).Source
   $psi.Arguments = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$target`""
@@ -236,7 +237,7 @@ function Install-ClaudeUsageStatusline {
   $psi.RedirectStandardOutput = $true
   $psi.StandardOutputEncoding = $utf8
   $psi.EnvironmentVariables['NO_COLOR'] = '1'
-  $psi.EnvironmentVariables.Remove('CLAUDE_STATUSLINE_SEGMENTS')
+  $psi.EnvironmentVariables['CLAUDE_STATUSLINE_SEGMENTS'] = 'model'
   $probe = [Diagnostics.Process]::Start($psi)
   $probe.StandardInput.Write('{"model":{"display_name":"ok"}}')
   $probe.StandardInput.Close()
