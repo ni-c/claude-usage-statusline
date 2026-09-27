@@ -138,7 +138,7 @@ wait_for_calls() {
   render
   [ "$output" = '[M]' ]
   # The claim is written before the render returns, so the next renders wait a day.
-  [ -f "$CACHE/latest" ]
+  [ -f "$CACHE/latest" ] || { ls -la "$CACHE" "$(dirname "$CACHE")" 2>&1; return 1; }
   wait_for_cache '1800000000 1.2.0'
   [ "$(calls)" = 1 ]
   grep -qx -- "-fsS --proto =https --max-time 5 -o /dev/null -w %{redirect_url} https://github.com/ni-c/claude-usage-statusline/releases/latest" "$LOG"
@@ -232,12 +232,30 @@ wait_for_calls() {
   [ "$output" = '[M]' ]
 }
 
-@test "a cache that is binary junk or huge does not reach the terminal" {
+# Invalid UTF-8, high bytes and control characters: fixed bytes, so that a failure
+# can be repeated. BSD tr and bash 3.2 are the ones that trip over these.
+@test "a cache of binary junk does not reach the terminal" {
+  local junk
+  for junk in '\377\376\200\300 \301\033[2J' '\3771799999000 1.2.0' '1799999000 1.2.\3770' \
+    '\342\202\2011799999000 1.2.0' '1799999000\t1.2.0' '\r\n1799999000 1.2.0'; do
+    rm -rf "$CACHE" "$LOG"
+    mkdir -p "$CACHE"
+    # shellcheck disable=SC2059 # the escapes are the point
+    printf "$junk\n" >"$CACHE/latest"
+    render
+    [ "$status" -eq 0 ] || return 1
+    case "$junk" in
+      '\3771799999000 1.2.0' | '\342\202\2011799999000 1.2.0') [ "$output" = '[M] | ↑ 1.2.0 available' ] ;;
+      *) [ "$output" = '[M]' ] ;;
+    esac || { echo "'$junk' printed '$output'"; return 1; }
+  done
+}
+
+@test "a huge cache is read no further than its first bytes" {
   mkdir -p "$CACHE"
-  head -c 100000 /dev/urandom >"$CACHE/latest"
+  { printf '1799999000 1.2.0\n'; head -c 1000000 /dev/zero | tr '\000' x; } >"$CACHE/latest"
   render
-  [ "$status" -eq 0 ]
-  [ "$output" = '[M]' ]
+  [ "$output" = '[M] | ↑ 1.2.0 available' ]
 }
 
 @test "a symlink as the cache file is neither read nor replaced" {

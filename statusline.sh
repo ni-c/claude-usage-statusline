@@ -201,8 +201,10 @@ write_cache() {
 # API, no JSON and no rate limit, and anything but the expected tag URL is dropped.
 start_update_check() {
   command -v curl >/dev/null 2>&1 || return 0
-  # shellcheck disable=SC2174 # only our own directory is meant to be private
-  mkdir -p -m 700 "$1" 2>/dev/null || return 0
+  # Private where the file system can say so. Not mkdir -m: under Git Bash it can
+  # fail where a plain mkdir works, and a chmod that fails costs nothing.
+  mkdir -p "$1" 2>/dev/null || return 0
+  chmod 700 "$1" 2>/dev/null
   write_cache "$1" "$2" || return 0
   (
     url=$(curl -fsS --proto '=https' --max-time 5 -o /dev/null -w '%{redirect_url}' \
@@ -226,9 +228,11 @@ update_notice() {
   [ -L "$file" ] && return 0
   if [ -e "$file" ]; then
     [ -f "$file" ] || return 0
-    # A NUL becomes a character no check lets through: dropped, it would make a valid
-    # line out of an invalid one, and kept, bash would warn on stderr.
-    line=$(head -c 64 "$file" 2>/dev/null | tr '\000' '?' | head -n 1)
+    # Every byte but digits, dots and spaces becomes a "?", which no check lets
+    # through: a NUL would make bash warn on stderr, a CR vanishes in Git Bash's
+    # command substitutions, and invalid UTF-8 makes BSD tr and bash 3.2's pattern
+    # matching stumble. Byte-wise, the result is the same on every platform.
+    line=$(head -c 64 "$file" 2>/dev/null | LC_ALL=C tr -c '0-9. \n' '?' 2>/dev/null | head -n 1)
   fi
   checked=${line%% *} latest=${line#* }
   case "$checked" in '' | *[!0-9]* | ?????????????*) checked='' ;; esac

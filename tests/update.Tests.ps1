@@ -1,7 +1,7 @@
 # The update segment of statusline.ps1, stamped as 1.1.0 the way stamp-release.sh
-# stamps a release. Pester 5. The cache is always fresh, or the check switched off,
-# so nothing reaches the network - except in the one case about the claim, which
-# looks only at what is written before the render returns.
+# stamps a release. Pester 5. The cache is fresh, or the check switched off, so
+# nothing reaches the network - except where the cache line is broken or stale, and
+# those cases look only at what the render printed or claimed before it returned.
 
 BeforeAll {
   . (Join-Path $PSScriptRoot 'TestHelpers.ps1')
@@ -98,6 +98,25 @@ Describe 'the update segment' {
   ) {
     Set-Cache ($Line.Replace('{esc}', $esc).Replace('{cr}', "`r").Replace('{nul}', [string][char]0))
     Invoke-Update | Should -BeExactly "[M]`n"
+  }
+
+  # The same fixed bytes tests/update.bats uses: invalid UTF-8, a high byte before
+  # the timestamp, a valid non-ASCII digit, a tab, a CR line. Each one breaks the
+  # timestamp at least, so each starts a check.
+  It 'a cache of binary junk reads the same as in statusline.sh: <Hex>' -ForEach @(
+    @{ Hex = 'FF FE 80 C0 20 C1 1B 5B 32 4A 0A'; Notice = $false },
+    @{ Hex = 'FF 31 37 39 39 39 39 39 30 30 30 20 31 2E 32 2E 30 0A'; Notice = $true },
+    @{ Hex = '31 37 39 39 39 39 39 30 30 30 20 31 2E 32 2E FF 30 0A'; Notice = $false },
+    @{ Hex = 'E2 82 81 31 37 39 39 39 39 39 30 30 30 20 31 2E 32 2E 30 0A'; Notice = $true },
+    @{ Hex = '31 37 39 39 39 39 39 30 30 30 09 31 2E 32 2E 30 0A'; Notice = $false },
+    @{ Hex = '0D 0A 31 37 39 39 39 39 39 30 30 30 20 31 2E 32 2E 30 0A'; Notice = $false }
+  ) {
+    Remove-Item -Recurse -Force $cache -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory $cache | Out-Null
+    $bytes = [byte[]]@($Hex -split ' ' | ForEach-Object { [Convert]::ToByte($_, 16) })
+    [IO.File]::WriteAllBytes((Join-Path $cache 'latest'), $bytes)
+    if ($Notice) { $expected = "[M] | $up 1.2.0 available`n" } else { $expected = "[M]`n" }
+    Invoke-Update | Should -BeExactly $expected
   }
 
   It 'a directory as the cache file is left alone' {
