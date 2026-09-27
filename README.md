@@ -11,7 +11,8 @@
 
 A status line for [Claude Code](https://code.claude.com) that shows how much of your
 rate limits you have used, and how long until they reset. It also shows the model,
-the folder, the git branch and how full the context window is. It runs on Linux,
+the model with its reasoning effort, the folder, the git branch and how full the
+context window is. It runs on Linux,
 macOS and Windows.
 
 <p align="center">
@@ -19,7 +20,7 @@ macOS and Windows.
 </p>
 
 ```text
-[Opus 5] 📁 my-project ⎇ main | ctx 57% | 1h05 64% | 3d 41%
+[Opus 5.5 · high] 📁 my-project ⎇ main | ctx 57% | 1h05 64% | 3d 41%
 ```
 
 <!-- The dir row writes its sample folder with a no-break space and a
@@ -27,14 +28,14 @@ macOS and Windows.
      two lines, because a table cannot be told not to wrap: GitHub strips
      style attributes and <nobr> alike. -->
 
-| Segment         | Name    | Meaning                                                                                                                  |
-| --------------- | ------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `[Opus 5]`      | `model` | The model answering in this session, under the name Claude Code gives it — or its bare model id if it sends no name at all. |
-| `📁 my‑project` | `dir`   | The last segment of the directory Claude Code is working in, so that a deep path still costs one short word.               |
-| `⎇ main`        | `git`   | The branch checked out in that directory, or the short commit hash on a detached HEAD. Outside a repository: nothing.      |
-| `ctx 57%`       | `ctx`   | How full the context window is. Claude Code sends the percentage; the status line only decides what colour it gets.        |
-| `1h05 64%`      | `5h`    | The five-hour limit: 64 % of it used, and 1 hour 5 minutes left until it resets.                                           |
-| `3d 41%`        | `7d`    | The weekly limit: 41 % of it used, and at most 3 days until it resets — whole days, rounded up, so `1d` means today.       |
+| Segment             | Name    | Meaning                                                                                                                  |
+| ------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `[Opus 5.5 · high]` | `model` | The model answering in this session, under the name Claude Code gives it — or its bare model id if it sends no name at all. A trailing note such as `(1M context)` is left off. After the name: the reasoning effort as `/effort` last set it, and `⚡` while fast mode is on. A model without effort levels shows none. |
+| `📁 my‑project`      | `dir`   | The last segment of the directory Claude Code is working in, so that a deep path still costs one short word.               |
+| `⎇ main`            | `git`   | The branch checked out in that directory, or the short commit hash on a detached HEAD. Outside a repository: nothing.      |
+| `ctx 57%`           | `ctx`   | How full the context window is. Claude Code sends the percentage; the status line only decides what colour it gets.        |
+| `1h05 64%`          | `5h`    | The five-hour limit: 64 % of it used, and 1 hour 5 minutes left until it resets.                                           |
+| `3d 41%`            | `7d`    | The weekly limit: 41 % of it used, and at most 3 days until it resets — whole days, rounded up, so `1d` means today.       |
 
 The names in the middle column are the ones `CLAUDE_STATUSLINE_SEGMENTS` takes, in
 [Configuration](#configuration) below.
@@ -195,13 +196,18 @@ platform:
 }
 ```
 
-| Variable                     | Default                    | Effect                                                                  |
-| ---------------------------- | -------------------------- | ----------------------------------------------------------------------- |
-| `CLAUDE_STATUSLINE_SEGMENTS` | `model,dir,git,ctx,5h,7d`  | Which segments to show, in this order. Unknown names are ignored.       |
-| `CLAUDE_STATUSLINE_WARN`     | `80`                       | From this percentage on: red with `⚠`.                                  |
-| `CLAUDE_STATUSLINE_NOTICE`   | `50`                       | From this percentage on: yellow.                                        |
-| `CLAUDE_STATUSLINE_NO_EMOJI` | unset                      | `1` replaces `📁`, `⎇` and `⚠` with plain text, for fonts without them. |
-| `NO_COLOR`                   | unset                      | Any value turns colours off ([no-color.org](https://no-color.org)).     |
+| Variable                        | Default                   | Effect                                                                        |
+| ------------------------------- | ------------------------- | ----------------------------------------------------------------------------- |
+| `CLAUDE_STATUSLINE_SEGMENTS`    | `model,dir,git,ctx,5h,7d` | Which segments to show, in this order. Unknown names are ignored.             |
+| `CLAUDE_STATUSLINE_WARN`        | `80`                      | From this percentage on: red with `⚠`.                                        |
+| `CLAUDE_STATUSLINE_NOTICE`      | `50`                      | From this percentage on: yellow.                                              |
+| `CLAUDE_STATUSLINE_EFFORT`      | on                        | `0` leaves the reasoning effort out of the model segment.                     |
+| `CLAUDE_STATUSLINE_SHORT_MODEL` | on                        | `0` keeps a trailing note such as `(1M context)` in the model name.           |
+| `CLAUDE_STATUSLINE_NO_EMOJI`    | unset                     | `1` replaces `📁`, `⎇`, `⚠` and `⚡` with plain text, for fonts without them. |
+| `NO_COLOR`                      | unset                     | Any value turns colours off ([no-color.org](https://no-color.org)).           |
+
+`1`, `true`, `yes` and `on` switch a setting on; `0`, `false`, `no` and `off` switch it
+off, in any case.
 
 ## Uninstall
 
@@ -233,10 +239,12 @@ installed it.
   Use `install.ps1`.
 - **The `install.cmd` window closes before you can read it.** It was double-clicked. Run
   it from an open command prompt.
-- **Boxes instead of icons.** Your terminal font has no `📁`, `⎇` or `⚠`. Set
+- **Boxes instead of icons.** Your terminal font has no `📁`, `⎇`, `⚠` or `⚡`. Set
   `CLAUDE_STATUSLINE_NO_EMOJI=1`.
 - **No `5h`/`7d` segments.** Rate limits are only reported for Pro and Max
   subscriptions, and only after the first answer of a session.
+- **No effort after the model name.** Claude Code only sends one for models that have
+  effort levels, and `CLAUDE_STATUSLINE_EFFORT=0` turns it off.
 - **No branch.** Git is not installed, or the folder is not inside a git repository.
 
 ## How it works

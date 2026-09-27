@@ -10,6 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The model segment shows the reasoning effort after the name, `[Opus 5.5 · high]`, as
+  Claude Code reports it — including a change made with `/effort` mid-session. Models
+  without effort levels show none. `CLAUDE_STATUSLINE_EFFORT=0` leaves it out.
+- `⚡` in the model segment while fast mode is on (`fast` with
+  `CLAUDE_STATUSLINE_NO_EMOJI=1`).
+
+### Changed
+
+- The model name loses a trailing note in parentheses, so `Opus 5.5 (1M context)` reads
+  `Opus 5.5`. A name that is nothing but such a note stays as it is.
+  `CLAUDE_STATUSLINE_SHORT_MODEL=0` keeps the full name.
+
 ## [1.1.0] - 2026-09-17
 
 ### Added

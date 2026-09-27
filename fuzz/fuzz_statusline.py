@@ -204,6 +204,9 @@ def _document(draw):
     """A document shaped like Claude Code's, with every value fuzzed."""
     doc = {
         "model": {"display_name": _scalar(draw), "id": _scalar(draw)},
+        # A malformed effort (no object, no string) must cost the effort only.
+        "effort": {"level": _scalar(draw)} if draw.integer(0, 1) else _scalar(draw),
+        "fast_mode": [True, False][draw.integer(0, 1)] if draw.integer(0, 1) else _scalar(draw),
         "workspace": {"current_dir": _scalar(draw)},
         "cwd": _scalar(draw),
         "context_window": {"used_percentage": _scalar(draw)},
@@ -240,6 +243,10 @@ def _environment(draw):
         env["CLAUDE_STATUSLINE_NOTICE"] = draw.text(12).replace("\x00", "")
     if draw.integer(0, 1):
         env["CLAUDE_STATUSLINE_NO_EMOJI"] = draw.text(6).replace("\x00", "")
+    if draw.integer(0, 1):
+        env["CLAUDE_STATUSLINE_SHORT_MODEL"] = draw.text(6).replace("\x00", "")
+    if draw.integer(0, 1):
+        env["CLAUDE_STATUSLINE_EFFORT"] = draw.text(6).replace("\x00", "")
     if draw.integer(0, 3):
         env["CLAUDE_STATUSLINE_NOW"] = str(draw.integer(0, 2**34))
     else:
