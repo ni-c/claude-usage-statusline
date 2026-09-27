@@ -213,7 +213,13 @@ function Get-CacheDir {
 }
 
 # "<now> <version>" into Dir\latest, whole or not at all.
+# Move-Item would put the file inside a directory of that name: neither that nor a
+# symlink is ours to touch.
 function Write-UpdateCache([string]$Dir, [string]$Latest) {
+  $target = Get-Item -LiteralPath (Join-Path $Dir 'latest') -Force -ErrorAction SilentlyContinue
+  if ($null -ne $target -and ($target.PSIsContainer -or ($target.Attributes -band [IO.FileAttributes]::ReparsePoint))) {
+    return $false
+  }
   $tmp = Join-Path $Dir "latest.$PID.tmp"
   try {
     [IO.File]::WriteAllText($tmp, "$now $Latest`n", $utf8)
@@ -242,6 +248,8 @@ try {
   $response.Close()
   if ($location -cmatch ('^' + [regex]::Escape("$repo/releases/tag/v") + '([0-9]{1,4}\.[0-9]{1,4}\.[0-9]{1,4})\z')) {
     $dir = $env:CLAUDE_STATUSLINE_FETCH_DIR
+    $target = Get-Item -LiteralPath (Join-Path $dir 'latest') -Force -ErrorAction SilentlyContinue
+    if ($null -ne $target -and ($target.PSIsContainer -or ($target.Attributes -band [IO.FileAttributes]::ReparsePoint))) { return }
     $tmp = Join-Path $dir "latest.$PID.tmp"
     [IO.File]::WriteAllText($tmp, $env:CLAUDE_STATUSLINE_FETCH_NOW + ' ' + $Matches[1] + "`n")
     Move-Item -LiteralPath $tmp -Destination (Join-Path $dir 'latest') -Force

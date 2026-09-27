@@ -186,8 +186,11 @@ cache_dir() {
 }
 
 # write_cache DIR VERSION → "<now> <version>" into DIR/latest, whole or not at all.
+# mv would put the file inside a directory of that name, or follow nothing but still
+# replace a symlink the check refuses to read: neither is ours to touch.
 write_cache() {
   local tmp="$1/latest.$$.tmp"
+  { [ -L "$1/latest" ] || [ -d "$1/latest" ]; } && return 1
   if (umask 077 && printf '%s %s\n' "$NOW" "$2" >"$tmp") 2>/dev/null && mv -f "$tmp" "$1/latest" 2>/dev/null; then
     return 0
   fi

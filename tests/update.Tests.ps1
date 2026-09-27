@@ -12,7 +12,6 @@ BeforeAll {
   if ($stamped -eq $source) { throw 'statusline.ps1 has no version line to stamp' }
   $stampedScript = Join-Path $work 'statusline.ps1'
   [IO.File]::WriteAllText($stampedScript, $stamped, (New-Object System.Text.UTF8Encoding($false)))
-  $cache = Join-Path $work 'cache'
   $esc = [string][char]27
   $up = [string][char]0x2191
 
@@ -21,7 +20,7 @@ BeforeAll {
     $merged = @{
       NO_COLOR                    = '1'
       CLAUDE_STATUSLINE_NOW       = '1800000000'
-      CLAUDE_STATUSLINE_CACHE_DIR = $cache
+      CLAUDE_STATUSLINE_CACHE_DIR = $script:cache
       CLAUDE_STATUSLINE_SEGMENTS  = 'model,update'
     }
     foreach ($key in $Environment.Keys) { $merged[$key] = $Environment[$key] }
@@ -34,12 +33,11 @@ BeforeAll {
   }
 
   function Set-Cache([string]$Line) {
-    Remove-Item -Recurse -Force $cache -ErrorAction SilentlyContinue
-    New-Item -ItemType Directory $cache | Out-Null
-    [IO.File]::WriteAllText((Join-Path $cache 'latest'), "$Line`n")
+    New-Item -ItemType Directory -Force $script:cache | Out-Null
+    [IO.File]::WriteAllText((Join-Path $script:cache 'latest'), "$Line`n")
   }
 
-  function Get-Cache { return [IO.File]::ReadAllText((Join-Path $cache 'latest')) }
+  function Get-Cache { return [IO.File]::ReadAllText((Join-Path $script:cache 'latest')) }
 }
 
 AfterAll {
@@ -47,10 +45,15 @@ AfterAll {
 }
 
 Describe 'the update segment' {
+  # A cache directory of its own for every case: a check an earlier case started may
+  # still be writing to the last one, and Windows starts processes slowly.
+  BeforeEach {
+    $script:cache = Join-Path $work ('cache-' + [guid]::NewGuid().ToString('N'))
+  }
+
   It 'a copy from a checkout is not stamped and never checks' {
-    Remove-Item -Recurse -Force $cache -ErrorAction SilentlyContinue
     Invoke-Update -Path (Join-Path $root 'statusline.ps1') | Should -BeExactly "[M]`n"
-    Test-Path $cache | Should -BeFalse
+    Test-Path $script:cache | Should -BeFalse
   }
 
   It 'a newer release in a fresh cache shows, and nothing is fetched' {
@@ -111,19 +114,17 @@ Describe 'the update segment' {
     @{ Hex = '31 37 39 39 39 39 39 30 30 30 09 31 2E 32 2E 30 0A'; Notice = $false },
     @{ Hex = '0D 0A 31 37 39 39 39 39 39 30 30 30 20 31 2E 32 2E 30 0A'; Notice = $false }
   ) {
-    Remove-Item -Recurse -Force $cache -ErrorAction SilentlyContinue
-    New-Item -ItemType Directory $cache | Out-Null
+    New-Item -ItemType Directory $script:cache | Out-Null
     $bytes = [byte[]]@($Hex -split ' ' | ForEach-Object { [Convert]::ToByte($_, 16) })
-    [IO.File]::WriteAllBytes((Join-Path $cache 'latest'), $bytes)
+    [IO.File]::WriteAllBytes((Join-Path $script:cache 'latest'), $bytes)
     if ($Notice) { $expected = "[M] | $up 1.2.0 available`n" } else { $expected = "[M]`n" }
     Invoke-Update | Should -BeExactly $expected
   }
 
   It 'a directory as the cache file is left alone' {
-    Remove-Item -Recurse -Force $cache -ErrorAction SilentlyContinue
-    New-Item -ItemType Directory (Join-Path $cache 'latest') | Out-Null
+    New-Item -ItemType Directory (Join-Path $script:cache 'latest') | Out-Null
     Invoke-Update | Should -BeExactly "[M]`n"
-    @(Get-ChildItem -Force (Join-Path $cache 'latest')).Count | Should -Be 0
+    @(Get-ChildItem -Force (Join-Path $script:cache 'latest')).Count | Should -Be 0
   }
 
   It '<Name>=<Value> stops both the notice and the check' -ForEach @(

@@ -235,10 +235,13 @@ wait_for_calls() {
 # Invalid UTF-8, high bytes and control characters: fixed bytes, so that a failure
 # can be repeated. BSD tr and bash 3.2 are the ones that trip over these.
 @test "a cache of binary junk does not reach the terminal" {
-  local junk
+  local junk n=0
   for junk in '\377\376\200\300 \301\033[2J' '\3771799999000 1.2.0' '1799999000 1.2.\3770' \
     '\342\202\2011799999000 1.2.0' '1799999000\t1.2.0' '\r\n1799999000 1.2.0'; do
-    rm -rf "$CACHE" "$LOG"
+    # A directory of its own each: the check an earlier line started may still be
+    # writing to the last one, and Windows starts processes slowly.
+    n=$((n + 1))
+    CACHE="$BATS_TEST_TMPDIR/junk-$n"
     mkdir -p "$CACHE"
     # shellcheck disable=SC2059 # the escapes are the point
     printf "$junk\n" >"$CACHE/latest"
@@ -278,6 +281,16 @@ wait_for_calls() {
   settle
   [ -z "$(ls -A "$CACHE/latest")" ]
   [ "$(calls)" = 0 ]
+}
+
+@test "a check never writes into a directory that took the cache file's place" {
+  seed '1700000000 1.2.0'
+  render FAKE_CURL_SLEEP=1
+  [ "$(calls)" = 1 ] || wait_for_calls 1
+  rm "$CACHE/latest"
+  mkdir "$CACHE/latest"
+  sleep 1.5
+  [ -z "$(ls -A "$CACHE/latest")" ]
 }
 
 @test "each opt-out stops both the notice and the check" {
